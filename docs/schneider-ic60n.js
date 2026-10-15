@@ -50,6 +50,30 @@ const verifiedGeometry=Object.freeze({
   url_fuente:'https://eriacomponentes.es/wp-content/uploads/2020/09/interruptor-automatico-magnetotermico-ic60n-2p-10a-curva-c.pdf',
   fabricante_documento:'Schneider Electric',
   estado:'geometria_documentada_no_montaje_validado'
+ }),
+ // SKU exactos comprobados en fichas de producto de distribuidor con datos
+ // transcritos de Schneider. Evidencia secundaria, requiere revalidación con
+ // ficha primaria del fabricante antes de declarar montaje constructivo apto.
+ A9F79206:Object.freeze({
+  ancho_mm:36,alto_mm:85,profundidad_mm:78.5,modulos:2,montaje:'carril_DIN',pasos_9_mm:4,
+  fecha_ficha:null,
+  url_fuente:'https://www.one-elec.com/es/magnetotermico-acti9-ic60n-2p-6-a-c-curva-6000-a-iec-60898-1-10-ka-iec-60947-2-a9f79206.html',
+  fabricante_documento:'Schneider Electric (datos reproducidos por distribuidor)',
+  estado:'geometria_documentada_no_montaje_validado'
+ }),
+ A9F79216:Object.freeze({
+  ancho_mm:36,alto_mm:85,profundidad_mm:78.5,modulos:2,montaje:'carril_DIN',pasos_9_mm:4,
+  fecha_ficha:null,
+  url_fuente:'https://www.snapelectro.com/products/a9f79216-interruptor-magnetotermico-bipolar-acti9-ic60n-2p-16a-curva-c-6ka-10ka-schneider',
+  fabricante_documento:'Schneider Electric (datos reproducidos por distribuidor)',
+  estado:'geometria_documentada_no_montaje_validado'
+ }),
+ A9F79220:Object.freeze({
+  ancho_mm:36,alto_mm:85,profundidad_mm:78.5,modulos:2,montaje:'carril_DIN',pasos_9_mm:4,
+  fecha_ficha:null,
+  url_fuente:'https://www.one-elec.com/es/magnetotermico-acti9-ic60n-2p-20-a-c-curva-6000-a-iec-60898-1-10-ka-iec-60947-2-a9f79220.html',
+  fabricante_documento:'Schneider Electric (datos reproducidos por distribuidor)',
+  estado:'geometria_documentada_no_montaje_validado'
  })
 });
 const sourceDiscrepancies=Object.freeze({
