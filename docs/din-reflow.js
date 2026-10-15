@@ -106,36 +106,50 @@ function apply(a,p){
 }
 function mmReport(a,resolve){
  const rows=[],issues=[],construction=root.PanelConstruction?.rails?.(a)||[];
- const clear=root.PanelEnclosureGeometry?.measure?.(a)?.clearWidth??null;
- let known=0,estimated=0,reserved=0;
+ const measurement=root.PanelEnclosureGeometry?.measure?.(a)||{};
+ const clear=measurement.clearWidth??null,height=measurement.clearHeight??null,depth=measurement.innerDepthMm??null;
+ let known=0,estimated=0,reserved=0,knownVolume=0;
  for(let r=0;r<(Number(a.rows)||0);r++){
   let extent=0,nominalEnd=0;
-  const ds=(a.devices||[]).filter(d=>d.row===r&&Number.isInteger(d.pos)&&d.pos>=0);
+  const ds=(a.devices||[]).filter(d=>d.row===r&&Number.isInteger(d.pos)&&d.pos>=0),physical=[];
   for(const d of ds){
    const match=typeof resolve==='function'?resolve(d):null;
-   const width=Number(match?.widthMm);
-   const verified=match?.status==='dimension_confirmada_usuario'&&Number.isFinite(width)&&width>0;
+   const width=match?.widthMm;
+   const verified=match?.status==='dimension_confirmada_usuario'&&typeof width==='number'&&Number.isFinite(width)&&width>0;
    verified?known++:estimated++;
    const w=verified?width:Number(d.modules)*DIN_MM,extra=extraMm(a,d.id);
-   if(extra>0)reserved++;
-   const requiredEnd=d.pos*DIN_MM+w+extra;
+   const start=d.pos*DIN_MM,requiredEnd=start+w+extra;
    const reservationEnd=(d.pos+footprint(a,d))*DIN_MM;
+   if(extra>0)reserved++;
    extent=Math.max(extent,requiredEnd);nominalEnd=Math.max(nominalEnd,reservationEnd);
    if(w>Number(d.modules)*DIN_MM+0.01)issues.push(d.label+': anchura comercial superior a la reserva modular.');
    if(requiredEnd>reservationEnd+0.01)issues.push(d.label+': anchura y reserva lateral superan los módulos apartados.');
+   const h=verified&&Number.isFinite(match.heightMm)&&match.heightMm>0?match.heightMm:null;
+   const z=verified&&Number.isFinite(match.depthMm)&&match.depthMm>0?match.depthMm:null;
+   if(h!==null&&z!==null)knownVolume++;
+   if(h!==null&&height!==null&&h>height+0.01)issues.push(d.label+': altura de ficha '+h+' mm supera altura interior libre '+height+' mm.');
+   if(z!==null&&depth!==null&&z>depth+0.01)issues.push(d.label+': profundidad de ficha '+z+' mm supera fondo interior declarado '+depth+' mm.');
+   physical.push({id:d.id,label:d.label,startMm:start,widthMm:w,heightMm:h,depthMm:z,
+    source:verified?'documentada_confirmada':'estimada',reservedMm:extra,reservationEndMm:reservationEnd});
+  }
+  for(let i=0;i<physical.length;i++)for(let j=i+1;j<physical.length;j++){
+   const x=physical[i],y=physical[j],endX=x.startMm+x.widthMm+x.reservedMm,endY=y.startMm+y.widthMm+y.reservedMm;
+   if(x.startMm<endY-0.01&&y.startMm<endX-0.01)
+    issues.push('Carril '+(r+1)+': interferencia horizontal en mm entre '+x.label+' y '+y.label+'.');
   }
   const rail=construction[r]?.lengthMm??null;
   if(rail!==null&&nominalEnd>rail+0.01)issues.push('Carril '+(r+1)+': reserva '+nominalEnd.toFixed(1)+' mm mayor que longitud declarada '+rail+' mm.');
   if(clear!==null&&nominalEnd>clear+0.01)issues.push('Carril '+(r+1)+': reserva '+nominalEnd.toFixed(1)+' mm mayor que anchura libre '+clear+' mm.');
-  rows.push({row:r,extentMm:extent,reservationEndMm:nominalEnd,railMm:rail,count:ds.length});
+  rows.push({row:r,extentMm:extent,reservationEndMm:nominalEnd,railMm:rail,count:ds.length,devices:physical});
  }
- return {rows,issues,known,estimated,reserved};
+ return {rows,issues,known,estimated,reserved,knownVolume,
+  pendingDepth:depth===null,pendingHeight:height===null};
 }
 function render(a,open,esc,resolve){
  const status=audit(a);
  if(!(Number(a.rows)>0))return '';
  const mm=mmReport(a,resolve);
- const summary='<section class="aux-physical-panel" data-din-mm="true"><div class="aux-physical-head"><strong>Comprobación horizontal DIN en mm</strong></div><p class="small-text">'+mm.known+' anchura(s) documentadas y confirmadas · '+mm.estimated+' estimadas · '+mm.reserved+' reservas laterales declaradas. Paso conservador de planificación de 18 mm, NO montaje certificado.</p>'+mm.rows.filter(r=>r.count).map(r=>'<p class="small-text">Carril '+(r.row+1)+': ocupación ≈ '+r.extentMm.toFixed(1)+' mm; reserva modular '+r.reservationEndMm.toFixed(1)+' mm'+(r.railMm!==null?' / carril declarado '+r.railMm+' mm':' (longitud sin declarar)')+'</p>').join('')+mm.issues.map(x=>'<p class="pending-check">⚠ '+esc(x)+'</p>').join('')+'<p class="tiny-hint">'+Object.keys(a.dinLocks||{}).length+' posición(es) fijada(s). Las reservas introducidas se redondean a módulos completos; una separación no declarada sigue PENDIENTE. No se han verificado peines, ventilación ni cableado.</p></section>';
+ const summary='<section class="aux-physical-panel" data-din-mm="true"><div class="aux-physical-head"><strong>Comprobación horizontal DIN en mm</strong></div><p class="small-text">'+mm.known+' anchura(s) documentadas y confirmadas · '+mm.estimated+' estimadas · '+mm.reserved+' reservas laterales declaradas · '+mm.knownVolume+' fichas con alto y fondo. Paso DIN de planificación: 18 mm, NO montaje certificado.</p>'+mm.rows.filter(r=>r.count).map(r=>'<p class="small-text">Carril '+(r.row+1)+': ocupación ≈ '+r.extentMm.toFixed(1)+' mm; reserva modular '+r.reservationEndMm.toFixed(1)+' mm'+(r.railMm!==null?' / carril declarado '+r.railMm+' mm':' (longitud sin declarar)')+'</p>').join('')+(mm.pendingDepth?'<p class="tiny-hint">Profundidad interior sin declarar: contrastar en Detalle constructivo.</p>':'')+mm.issues.map(x=>'<p class="pending-check">⚠ '+esc(x)+'</p>').join('')+'<details class="din-dimensions-details"><summary>Cotas de cada equipo por carril</summary>'+mm.rows.flatMap(r=>r.devices).map(d=>'<p class="small-text">'+esc(d.label)+': '+d.widthMm+' mm ancho'+(d.heightMm===null?'':', '+d.heightMm+' mm alto')+(d.depthMm===null?'':', '+d.depthMm+' mm fondo')+' · '+(d.source==='documentada_confirmada'?'ficha confirmada':'estimado')+(d.reservedMm?' · reserva derecha '+d.reservedMm+' mm':'')+'</p>').join('')+'</details>'+ '<p class="tiny-hint">'+Object.keys(a.dinLocks||{}).length+' posición(es) fijada(s). Las reservas introducidas se redondean a módulos completos; una separación no declarada sigue PENDIENTE. No se han verificado peines, ventilación ni cableado.</p></section>';
  if(!status.reviewNeeded)return summary;
  let html='<section class="aux-physical-panel" data-din-review="true" aria-label="Redistribución DIN asistida">'+
  '<div class="aux-physical-head"><strong>⚠ Revisión de colocación DIN</strong></div>'+

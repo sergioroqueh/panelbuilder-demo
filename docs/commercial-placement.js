@@ -27,15 +27,15 @@ function resolve(d,a,brand){
  const item=root.PanelCommercial?.get(brand,chosen.referencia);
  if(!item||!root.PanelApparatusCandidates?.evaluate(d,item).eligible)return null;
  const at=item.atributos||{},proof=item.geometria_documental;
- const width=Number(at.ancho_mm),mod=Number(at.modulos);
+ const width=Number(at.ancho_mm),mod=Number(at.modulos),height=Number(at.alto_mm),depth=Number(at.profundidad_mm??at.fondo_mm);
  if(!proof||proof.estado!=='geometria_documentada_no_montaje_validado'||
    typeof proof.fuente!=='string'||!proof.fuente.startsWith('https://')||
    !Number.isFinite(width)||width<=0||!Number.isInteger(mod)||mod<1||mod>48||
-   Math.ceil(width/18)!==mod||Math.abs(width-mod*18)>0.01||
-   !(Number(at.alto_mm)>0&&Number(at.profundidad_mm)>0))return null;
+   width>mod*18+0.01||
+   !Number.isFinite(height)||height<=0||!Number.isFinite(depth)||depth<=0)return null;
  return {ref:item.referencia,name:item.descripcion,source:proof.fuente,
-   widthMm:width,modules:mod,heightMm:Number(at.alto_mm),depthMm:Number(at.profundidad_mm),
-   status:STATUS,reason:'Solo geometría de ficha aplicada por confirmación. Montaje y compatibilidades por comprobar.'};
+   widthMm:width,modules:mod,heightMm:height,depthMm:depth,
+   status:STATUS,reason:'Cota real de ficha confirmada, ocupación DIN según módulos declarados; montaje y separaciones por comprobar.'};
 }
 function canApply(d,brand,ref){
  if(!d||!brand||!ref)return false;
