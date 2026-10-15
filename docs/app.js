@@ -497,49 +497,140 @@ function brandCandidateDetail(d,c){
    <a class="small-link" href="${escape(c.fuente)}" target="_blank" rel="noopener noreferrer">Abrir ficha de producto ↗</a>
  </div>`;
 }
+/* Dos fuentes en una única pantalla:
+ * a) minicátalogo legacy: dimensiones documentadas, modifica anchura PLANIFICADA;
+ * b) biblioteca técnica: referencia documental sin dimensiones aplicables.
+ * El aparato genérico y su topología nunca se sustituyen automáticamente. */
+const documentaryValue=ref=>'doc:'+ref;
+function brandDocumentary(d,ref){
+ const record=window.PanelCommercial.get(state.brand,ref);
+ if(!record)return null;
+ const evaluation=window.PanelApparatusCandidates.evaluate(d,record);
+ return {record,...evaluation};
+}
+function brandDocumentaryLabel(candidate){
+ const a=candidate.record.atributos||{},r=candidate.record;
+ const parts=[r.referencia,window.PanelApparatusCandidates.normalizePoles(a.polos)||'polos pendientes'];
+ if(a.amp)parts.push(a.amp+' A');
+ if(a.curva)parts.push('curva '+a.curva);
+ if(a.icn_60898_ka??a.icn_ka)parts.push('Icn '+(a.icn_60898_ka??a.icn_ka)+' kA');
+ parts.push('solo documental · dimensión pendiente de aplicar');
+ return parts.join(' · ');
+}
+function brandDocumentaryDetail(d,c){
+ if(!c||!c.eligible)return '<div class="brand-preview-empty">Ficha no elegible con los requisitos actuales. Revisa polos, corriente, curva, poder de corte y vigencia.</div>';
+ const r=c.record,att=r.atributos||{},est=E.estimateModules(d);
+ const dims=Number(att.modulos)>0&&Number.isInteger(Number(att.modulos))?
+   'Ficha declara '+att.modulos+' M · todavía NO aplicados al montaje':
+   'Anchura comercial pendiente de validar · no se recalcula la envolvente';
+ const tax=r.pvp_sin_iva_eur!=null?'PVP sin IVA documentado: '+r.pvp_sin_iva_eur+' EUR':
+   r.precio_publicado_eur!=null?'Importe web '+r.precio_publicado_eur+' EUR · IVA sin confirmar':'Precio no documentado';
+ return '<div class="candidate-detail" data-documentary-preview="'+escape(r.referencia)+'">'
+   +'<div class="candidate-ref"><strong>'+escape(r.fabricante+' '+r.referencia)+'</strong><span class="badge amber">Solo candidata documental · NO VALIDADA</span></div>'
+   +'<div class="candidate-metadata"><span>'+escape(r.descripcion)+'</span><span>'+escape(dims)+'</span></div>'
+   +'<div class="geometry-compare"><div><small>Dispositivo genérico</small><strong>≈ '+est+' M</strong><span>Conservado en diseño y unifilar</span></div>'
+   +'<div><small>Referencia comercial</small><strong>Sin anchura aplicada</strong><span>Sin afirmar montaje compatible ni espacio suficiente</span></div></div>'
+   +'<p class="pending-check">'+escape(c.pending.join(' · ')||'Comprobar condiciones técnicas y geometría de instalación')+'</p>'
+   +'<p class="small-text">'+escape(tax)+'</p>'
+   +(r.incidencia_fuente?'<p class="pending-check">'+escape(r.incidencia_fuente.nota)+'</p>':'')
+   +'<a class="small-link" href="'+escape(r.url_oficial)+'" target="_blank" rel="noopener noreferrer">Ficha del fabricante ↗</a></div>';
+}
+function brandReviewDetail(d,value){
+ if(!value)return brandCandidateDetail(d,null);
+ if(value.startsWith('doc:'))return brandDocumentaryDetail(d,brandDocumentary(d,value.slice(4)));
+ return brandCandidateDetail(d,M.find(d,state.brand,value));
+}
 function refreshBrandDetail(select){
  const d=alt().devices.find(x=>x.id===select.dataset.brandPick);
  const target=select.closest('tr')?.querySelector('[data-brand-detail]');
  if(!d||!target)return;
- target.innerHTML=brandCandidateDetail(d,select.value?M.find(d,state.brand,select.value):null);
+ target.innerHTML=brandReviewDetail(d,select.value);
 }
 function openBrandReview(){
  if(state.brand==='Generico')return toast('Selecciona primero Schneider, Legrand o Hager.');
+ const P=window.PanelApparatusCandidates;
  const rows=alt().devices.map(d=>{
-   const options=M.candidates(d,state.brand),possible=options.filter(c=>!c.blocked),blocked=options.filter(c=>c.blocked);
-   const current=alt().assignments?.[d.id]||'';
-   const opt=possible.map(c=>`<option value="${escape(c.referencia)}" ${current===c.referencia?'selected':''}>${escape(brandCandidateLabel(c))}</option>`).join('');
-   const review=blocked.length?`<details class="blocked-candidates"><summary>${blocked.length} alternativa(s) no seleccionable(s)</summary>${blocked.map(c=>`<p><b>${escape(c.referencia)}</b> · ${escape(c.reason)}</p>`).join('')}</details>`:'';
-   const chosen=possible.find(c=>c.referencia===current)||null;
-   return `<tr><td><strong>${escape(d.label)}</strong><div class="generic-spec">${escape(d.name)}</div><div class="small-text">${escape(brandSpec(d))}</div></td>
-      <td><select class="select" aria-label="Referencia para ${escape(d.label)}" data-brand-pick="${escape(d.id)}"><option value="">Sin asignar · mantener genérico</option>${opt}</select><div class="candidate-count">${possible.length?`${possible.length} candidato(s) disponible(s)`:'Sin candidato elegible en este catálogo parcial'}</div>${review}</td>
-      <td data-brand-detail="${escape(d.id)}">${brandCandidateDetail(d,chosen)}</td></tr>`;
+   const allLegacy=M.candidates(d,state.brand),possible=allLegacy.filter(c=>!c.blocked),blocked=allLegacy.filter(c=>c.blocked);
+   const documents=P.list(d,state.brand).filter(c=>c.eligible);
+   const documented=new Set(documents.map(c=>c.record.referencia));
+   const legacy=possible.filter(c=>!documented.has(c.referencia));
+   const prior=alt().apparatusCandidates?.[d.id];
+   const currentDoc=prior?.fabricante===state.brand&&documents.some(c=>c.record.referencia===prior.referencia)
+       ?documentaryValue(prior.referencia):'';
+   const previousLegacy=alt().assignments?.[d.id]||'';
+   const current=currentDoc||(!documented.has(previousLegacy)?previousLegacy:'');
+   const oldOptions=legacy.map(c=>'<option value="'+escape(c.referencia)+'" '+(current===c.referencia?'selected':'')+'>'+escape(brandCandidateLabel(c))+'</option>').join('');
+   const documentaryOptions=documents.map(c=>'<option value="'+escape(documentaryValue(c.record.referencia))+'" '+(current===documentaryValue(c.record.referencia)?'selected':'')+'>'+escape(brandDocumentaryLabel(c))+'</option>').join('');
+   const opts=(legacy.length?'<optgroup label="Dimensión documentada · preselección antigua">'+oldOptions+'</optgroup>':'')
+      +(documents.length?'<optgroup label="Fichas documentales · montaje por verificar">'+documentaryOptions+'</optgroup>':'');
+   const review=blocked.length?'<details class="blocked-candidates"><summary>'+blocked.length+' referencia(s) del minicátalogo bloqueada(s)</summary>'
+     +blocked.map(c=>'<p><b>'+escape(c.referencia)+'</b> · '+escape(c.reason)+'</p>').join('')+'</details>':'';
+   const otherBrand=prior?.fabricante!==undefined&&prior.fabricante!==state.brand?
+     '<p class="tiny-hint">Candidata previa '+escape(prior.fabricante+' '+prior.referencia)+' conservada hasta que la sustituyas expresamente.</p>':'';
+   const count=legacy.length+documents.length;
+   return '<tr><td><strong>'+escape(d.label)+'</strong><div class="generic-spec">'+escape(d.name)+'</div><div class="small-text">'+escape(brandSpec(d))+'</div></td>'
+     +'<td><select class="select" aria-label="Referencia para '+escape(d.label)+'" data-brand-pick="'+escape(d.id)+'"><option value="">Sin asignar · mantener genérico</option>'+opts+'</select>'
+     +'<div class="candidate-count" data-brand-count="'+escape(d.id)+'">'+(count?legacy.length+' con dimensiones de minicátalogo · '+documents.length+' candidata(s) documentales':'Sin candidato documentado que cumpla los requisitos actuales')+'</div>'
+     +otherBrand+review+'</td>'
+     +'<td data-brand-detail="'+escape(d.id)+'">'+brandReviewDetail(d,current)+'</td></tr>';
  }).join('');
  $('brandReviewTable').innerHTML=rows;
  $('brandReviewTitle').textContent='Comparar y preseleccionar · '+state.brand;
  $('brandReview').classList.add('open');$('brandReview').setAttribute('aria-hidden','false');
 }
 $('brandReviewTable').addEventListener('change',e=>{if(e.target.matches('[data-brand-pick]'))refreshBrandDetail(e.target);});
-function autoPickBrandReview(commit=false){
- let count=0;document.querySelectorAll('[data-brand-pick]').forEach(sel=>{if(sel.value)return;const first=[...sel.options].find(o=>o.value);if(first){sel.value=first.value;refreshBrandDetail(sel);count++;}});
- if(!count&&!commit)return toast('No hay nuevas sugerencias automáticas para aplicar.');
- if(commit){$('applyBrandReview').click();} else {toast(count+' referencia(s) preseleccionada(s) automáticamente. Revisa y aplica si te encaja.');}
+function autoPickBrandReview(){
+ let count=0;
+ document.querySelectorAll('[data-brand-pick]').forEach(sel=>{
+   if(sel.value)return;
+   // Nunca seleccionar automáticamente una ficha documental con montaje pendiente.
+   const first=[...sel.options].find(o=>o.value&&!o.value.startsWith('doc:'));
+   if(first){sel.value=first.value;refreshBrandDetail(sel);count++;}
+ });
+ if(!count)return toast('No hay opciones con dimensión documentada para autoseleccionar. Las fichas documentales requieren elección manual.');
+ toast(count+' referencia(s) del minicátalogo preseleccionada(s). Revisa antes de aplicar.');
 }
 function closeBrandReview(){$('brandReview').classList.remove('open');$('brandReview').setAttribute('aria-hidden','true');}
 $('openBrandReview').addEventListener('click',openBrandReview);
 $('closeBrandReview').addEventListener('click',closeBrandReview);
 $('brandReview').addEventListener('click',e=>{if(e.target===$('brandReview'))closeBrandReview();});
 $('applyBrandReview').addEventListener('click',()=>{
- const picks={};for(const sel of document.querySelectorAll('[data-brand-pick]')){
-   if(!sel.value)continue;
+ const picks={},documents={},original=alt().apparatusCandidates||{};
+ // Validar TODO antes de mutar cualquier estado.
+ for(const sel of document.querySelectorAll('[data-brand-pick]')){
    const d=alt().devices.find(x=>x.id===sel.dataset.brandPick);
-   if(!d||!M.find(d,state.brand,sel.value)){toast('Candidato no válido. Revisa la selección.');return;}
-   picks[d.id]=sel.value;
+   if(!d){toast('El aparato ya no existe.');return;}
+   if(!sel.value)continue;
+   if(sel.value.startsWith('doc:')){
+     const ref=sel.value.slice(4),review=brandDocumentary(d,ref);
+     if(!review?.eligible){toast('La ficha ya no satisface los requisitos. Vuelve a comparar.');return;}
+     documents[d.id]=ref;
+   } else {
+     if(!M.find(d,state.brand,sel.value)){toast('Candidato del minicátalogo no válido. Revisa la selección.');return;}
+     picks[d.id]=sel.value;
+   }
  }
- saveAction(()=>{alt().assignments=picks;alt().layoutDirty=true;},{electrical:false});
- closeBrandReview();toast(Object.keys(picks).length+' preselecciones asociadas. Recalcula envolvente y revisa compatibilidades.');
+ const prevAssignments=alt().assignments||{};
+ const changedWidth=JSON.stringify(picks)!==JSON.stringify(prevAssignments);
+ saveAction(()=>{
+   const a=alt();
+   a.assignments=picks;
+   a.apparatusCandidates={...(a.apparatusCandidates||{})};
+   for(const d of a.devices){
+     if(documents[d.id]){
+       // Misma ruta de validación/persistencia que el comparador del inspector.
+       window.PanelApparatusCandidates.choose(a,d.id,state.brand,documents[d.id]);
+     }else if(picks[d.id]||a.apparatusCandidates[d.id]?.fabricante===state.brand){
+       delete a.apparatusCandidates[d.id];
+     }
+   }
+   if(changedWidth)a.layoutDirty=true;
+ },{electrical:false});
+ closeBrandReview();
+ const n=Object.keys(documents).length,k=Object.keys(picks).length;
+ toast(n+' candidata(s) documentales y '+k+' preselección(es) dimensionales. El genérico se conserva.');
 });
-$('autoPickBrandReview').addEventListener('click',()=>autoPickBrandReview(false));
+$('autoPickBrandReview').addEventListener('click',autoPickBrandReview);
 $('brandSelect').addEventListener('change',e=>{saveAction(()=>{state.brand=e.target.value;syncWidthsAcrossAlternatives();},{electrical:false});toast('Marca elegida. Los aparatos siguen genéricos hasta confirmar candidatos.');if(state.brand!=='Generico')openBrandReview();});
 $('reserveInput').addEventListener('change',e=>saveAction(()=>{alt().reserve=Number(e.target.value);alt().layoutDirty=true;},{electrical:false}));
 $('alternativeSelect').addEventListener('change',e=>{state.active=e.target.value;selected=alt().devices[0]?.id||null;selectedCircuit=null;selectedBar=null;persist();render();});
