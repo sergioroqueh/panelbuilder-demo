@@ -14,7 +14,17 @@ function rows(items){
    o.iva_base==='sin_iva_confirmado'?`<strong class="catalog-price">${escape(C().priceLabel(o))}</strong><small class="catalog-price-note">Recomendado · vigencia no publicada</small>`:
    `<strong class="catalog-price">${escape(C().priceLabel(o))}</strong><small class="catalog-price-note">Importe publicado · no presupuestar como neto</small>`;
   const attrs=Object.entries(o.atributos||{}).map(([k,v])=>k.replaceAll('_',' ')+': '+v).join(' · ');
-  const src=o.fuente_tipo==='listado_oficial'?'Listado oficial':'Ficha oficial';
+  const src=o.fuente_tipo==='listado_oficial'?'Listado oficial':
+   o.fuente_tipo==='faq_oficial'?'FAQ oficial (códigos)':
+   o.fuente_tipo==='hipotesis_por_patron'?'FAQ de familia (NO confirma referencia)':'Ficha oficial';
+  const status=o.procedencia_referencia?
+   '<small class="catalog-record-status" data-ic60n-status="'+escape(o.estado_comercial)+'">'+
+   escape(o.estado_comercial==='descatalogado'?'DESCATALOGADA':
+    o.estado_comercial==='gama_no_comercializada'?'GAMA RETIRADA EN ESPAÑA':
+    o.procedencia_referencia==='patron_sin_verificar'?'REFERENCIA SIN VERIFICAR':
+    o.admision_comparador?'Ficha individual · revisión de montaje pendiente':
+    'Código en FAQ · falta ficha individual')+'</small>':'';
+
   const relations=root.PanelAccessoryLinks.get(o.fabricante,o.referencia);
   const related=relations.length?`<div class="commercial-inline-relations" data-commercial-links="${escape(o.referencia)}">
    <strong class="commercial-inline-title">${relations.length} vínculo(s) documentado(s)</strong>
@@ -33,7 +43,7 @@ function rows(items){
    </div></div>`:
    '<small>Sin relaciones estudiadas</small>';
   return `<tr data-commercial-ref="${escape(o.referencia)}" data-commercial-brand="${escape(o.fabricante)}">
-   <td><strong>${escape(o.referencia)}</strong><small>${escape(o.fabricante)}</small></td>
+   <td><strong>${escape(o.referencia)}</strong><small>${escape(o.fabricante)}</small>${status}</td>
    <td><strong>${escape(o.descripcion)}</strong><small>${escape(o.categoria)}</small><small class="catalog-attrs" title="${escape(attrs)}">${escape(attrs)}</small></td>
    <td>${pvp}<small>${escape(o.fecha_consulta)} · ES</small></td>
    <td><span class="badge amber">Montaje pendiente</span>${related}<small>Prohibida la asociación automática</small></td>
@@ -52,6 +62,7 @@ function render(){
  <div class="commercial-intro"><p><strong>${total.total} referencias de fabricante</strong> · Schneider ${total.brand.Schneider||0} · Legrand ${total.brand.Legrand||0} · Hager ${total.brand.Hager||0} · ABB ${total.brand.ABB||0} · Siemens ${total.brand.Siemens||0}</p>
  <div class="commercial-coverage" data-commercial-coverage="true"><strong>Cobertura documental actual · no equivale a compatibilidad técnica</strong><span>Envolventes: ${total.category.envolvente||0} · Magnetotérmicos: ${total.category.magnetotermico||0} · Diferenciales/RCBO: ${total.category.diferencial||0} · SPD: ${total.category.sobretensiones||0} · Contactores: ${total.category.contactor||0}</span><small>Próximos lotes prioritarios: MCB 1P+N de 1 y 2 módulos, diferenciales A/F/B según aplicación, RCBO, sobretensiones TT/TN y envolventes de 2–4 filas con fichas dimensionales.</small></div>
  <p>Datos de fichas/listados oficiales consultados el ${C().fecha_captura}. Los ${total.iva_confirmado} importes con base confirmada son <b>precios recomendados sin IVA</b>; los ${total.iva_pendiente} importes restantes publicados no tienen la base de IVA confirmada. La fecha de entrada en vigor de las tarifas <b>no se ha acreditado</b>.</p>
+ <p><strong>Acti9 iC60N:</strong> matriz de 90 combinaciones teóricas B/C, con procedencia y estado por referencia. Las fichas sin verificar, gamas retiradas y descatalogadas NO son candidatas comerciales. La existencia de un código en la FAQ no garantiza stock ni vigencia. Sin IVA confirmado, ningún precio Schneider es PVP neto.</p>
  <p><strong>Ninguna referencia está habilitada como recomendación de compatibilidad.</strong> Para peines/repartidores necesitamos comprobar familia y borne del aparato, número de polos, paso, corriente, sección, accesorios y documento de combinación. Envolventes: dimensiones interiores y accesorios pendientes.</p></div>
  <div class="commercial-filters">
  <label>Buscar por referencia, descripción o dato <input type="search" data-commercial-search="1" placeholder="Ej. contactor 25A, 004840, peine tetrapolar…" value="${escape(text)}" autocomplete="off"></label>
