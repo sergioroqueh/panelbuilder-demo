@@ -101,7 +101,9 @@ function apply(a,p){
  if(!p?.ok||signature(a)!==p.signature||a.devices.some(d=>!p.positions?.[d.id]||pinned(a,d.id)&&(d.row!==p.positions[d.id].row||d.pos!==p.positions[d.id].pos)))return false;
  const trial={rows:p.rows,slots:p.slots,dinClearancesMm:a.dinClearancesMm,devices:a.devices.map(d=>({...d,...p.positions[d.id]}))};
  if(trial.devices.some(d=>!p.positions[d.id])||!audit(trial).clear)return false;
+ const formatChanged=a.rows!==p.rows||a.slots!==p.slots;
  a.rows=p.rows;a.slots=p.slots;a.devices.forEach(d=>{d.row=p.positions[d.id].row;d.pos=p.positions[d.id].pos;});a.layoutDirty=false;
+ if(formatChanged)a.dinRailDoorMm={}; // Medidas del carril anterior NO acreditan un formato distinto.
  return true;
 }
 function mmReport(a,resolve){
