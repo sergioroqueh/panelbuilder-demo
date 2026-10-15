@@ -13,7 +13,7 @@ function valid(c){
 }
 function rails(a){
  const values=a.physicalConstruction?.rails||{};
- return Array.from({length:Math.max(0,Math.min(MAX_ROWS,Number(a.rows)||0))},(_,i)=>({id:'rail-'+i,index:i,lengthMm:values[i]??null,minimumNominalMm:Number(a.slots||0)*17.5}));
+ return Array.from({length:Math.max(0,Math.min(MAX_ROWS,Number(a.rows)||0))},(_,i)=>({id:'rail-'+i,index:i,lengthMm:values[i]??null,minimumNominalMm:Number(a.slots||0)*18}));
 }
 function set(a,key,value){
  const raw=String(value).trim(),v=raw===''?null:Number(raw);

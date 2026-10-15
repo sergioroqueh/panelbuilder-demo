@@ -10,7 +10,7 @@ function measure(a){
  const w=n('innerWidthMm'),h=n('innerHeightMm'),l=n('ductLeftMm'),r=n('ductRightMm'),t=n('ductTopMm'),b=n('ductBottomMm'),pitch=n('railPitchMm');
  const clearWidth=[w,l,r].every(x=>x!==null)?w-l-r:null;
  const clearHeight=[h,t,b].every(x=>x!==null)?h-t-b:null;
- const railWidth=a.slots>0?a.slots*17.5:null;
+ const railWidth=a.slots>0?a.slots*18:null;
  const conflicts=[];
  if(clearWidth!==null&&clearWidth<=0)conflicts.push('Las canaletas laterales consumen la anchura interior.');
  if(clearHeight!==null&&clearHeight<=0)conflicts.push('Las canaletas superior e inferior consumen la altura interior.');
@@ -33,7 +33,7 @@ function preview(a,esc){
  const rect=(x,y,w,h,klass)=>w>0&&h>0?'<rect class="'+klass+'" x="'+x+'" y="'+y+'" width="'+w+'" height="'+h+'" rx="2"/>':'';
  const x0=L*scale,y0=T*scale,usableW=Math.max(0,W-L-R)*scale,usableH=Math.max(0,H-T-B)*scale;
  const rails=Math.max(0,Math.min(10,Number(a.rows)||0)),slots=Math.max(0,Number(a.slots)||0);
- const railWidth=slots*17.5*scale;
+ const railWidth=slots*18*scale;
  let railMarkup='';
  if(rails&&usableW>0&&usableH>0){
    const pitch=g.railPitchMm,step=rails>1?(pitch!==null&&pitch!==undefined?pitch*scale:usableH/(rails+1)):0;
@@ -42,11 +42,11 @@ function preview(a,esc){
     const y=yFirst+i*step;
     if(y<y0||y>y0+usableH)continue;
     const declared=root.PanelConstruction.rails(a)[i]?.lengthMm;
-    const drawnLength=(declared===null?slots*17.5:declared)*scale;
+    const drawnLength=(declared===null?slots*18:declared)*scale;
     const dx=x0+(usableW-drawnLength)/2;
     railMarkup+='<line class="geom-rail" x1="'+dx+'" y1="'+y+'" x2="'+(dx+drawnLength)+'" y2="'+y+'"/>';
     for(const d of a.devices.filter(d=>d.row===i&&Number.isInteger(Number(d.pos)))){
-      const x=dx+Number(d.pos)*17.5*scale, ww=Number(d.modules)*17.5*scale;
+      const x=dx+Number(d.pos)*18*scale, ww=Number(d.modules)*18*scale;
       railMarkup+=rect(x,y-9,ww,18,'geom-device');
       if(ww>=25)railMarkup+='<text class="geom-device-label" x="'+(x+ww/2)+'" y="'+(y+3)+'" text-anchor="middle">'+esc(d.label).slice(0,14)+'</text>';
     }
@@ -59,7 +59,7 @@ function preview(a,esc){
 function form(a,esc){
  const m=measure(a),g=a.enclosureGeometry||{};
  const fmt=v=>v===null?'Pendiente':v.toLocaleString('es-ES',{maximumFractionDigits:1})+' mm';
- return '<section class="aux-physical-panel"><div class="aux-physical-head"><strong>Dimensiones interiores · estudio previo</strong></div><p class="small-text">Introduce medidas reales conocidas de la envolvente; no se autocompletan dimensiones comerciales.</p><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px">'+fields.map(([key,label])=>'<label style="display:grid;gap:4px;font-size:12px">'+esc(label)+' (mm)<input data-geom-field="'+key+'" type="number" min="0" max="10000" step="0.1" value="'+esc(g[key]??'')+'" placeholder="Sin definir" style="min-width:0;width:100%;padding:8px;border:1px solid #a0aec0;border-radius:5px;background:transparent;color:inherit"></label>').join('')+'</div><p class="small-text">Anchura libre: '+fmt(m.clearWidth)+' · carril orientativo: '+fmt(m.railWidth)+' · altura libre: '+fmt(m.clearHeight)+'.</p>'+m.conflicts.map(x=>'<p style="color:#b45309">⚠ '+esc(x)+'</p>').join('')+'<p class="small-text">'+m.pending.length+' medidas pendientes. Comprobación preliminar: sin cálculo de profundidad, fijaciones, curvaturas, disipación, geometría de aparatos, cableado ni accesibilidad. 17,5 mm/módulo es una referencia nominal, no dimensión comprobada.</p></section>';
+ return '<section class="aux-physical-panel"><div class="aux-physical-head"><strong>Dimensiones interiores · estudio previo</strong></div><p class="small-text">Introduce medidas reales conocidas de la envolvente; no se autocompletan dimensiones comerciales.</p><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px">'+fields.map(([key,label])=>'<label style="display:grid;gap:4px;font-size:12px">'+esc(label)+' (mm)<input data-geom-field="'+key+'" type="number" min="0" max="10000" step="0.1" value="'+esc(g[key]??'')+'" placeholder="Sin definir" style="min-width:0;width:100%;padding:8px;border:1px solid #a0aec0;border-radius:5px;background:transparent;color:inherit"></label>').join('')+'</div><p class="small-text">Anchura libre: '+fmt(m.clearWidth)+' · carril orientativo: '+fmt(m.railWidth)+' · altura libre: '+fmt(m.clearHeight)+'.</p>'+m.conflicts.map(x=>'<p style="color:#b45309">⚠ '+esc(x)+'</p>').join('')+'<p class="small-text">'+m.pending.length+' medidas pendientes. Comprobación preliminar: sin cálculo de profundidad, fijaciones, curvaturas, disipación, geometría de aparatos, cableado ni accesibilidad. 18 mm/módulo es un paso de planificación conservador; no es dimensión comercial comprobada ni separación certificada.</p></section>';
 }
 function check(a){const m=measure(a);return [...m.conflicts.map(s=>'Envolvente: '+s),...(a.rows&&m.pending.length?['Envolvente: estudio dimensional incompleto ('+m.pending.length+' campos pendientes).']:[])];}
 root.PanelEnclosureGeometry=Object.freeze({valid,measure,set,form,preview,check});
