@@ -17,18 +17,36 @@ const family={
 // SOLO hay importe cuando se consultó la ficha individual, no por analogía.
 const individual=Object.freeze({
  A9F79106:64.96,A9F79110:58.45,A9F79163:187.09,
- A9F79210:128.84,A9F79263:375.24,
+ A9F79206:141.33,A9F79210:128.84,A9F79216:131.17,
+ A9F79220:132.59,A9F79225:137.80,A9F79232:146.01,
+ A9F79240:182.87,A9F79250:351.05,A9F79263:375.24,
  A9F79310:190.41,A9F79332:215.76,
  A9F79410:265.45,A9F79463:803.44,
  A9F79606:124.43,A9F79610:114.25,A9F79640:167.61,A9F79663:351.45,
  A9F78110:70.85,A9F78125:75.81,
+ A9F78210:152.27,A9F78216:155.25,A9F78220:159.89,
+ A9F78225:162.74,A9F78240:219.02,
  A9F78332:257.85,A9F78350:663.13,A9F78363:696.24,
  A9F78406:354.63,A9F78410:333.25,A9F78425:356.44,
  A9F78450:913.81,A9F78463:968.88,
  A9F78610:135.47
 });
-const individualWithoutPrice=new Set(['A9F78263','A9F78632']);
-const withdrawn=new Set(['A9F78263','A9F78632']);
+const individualWithoutPrice=new Set(['A9F78250','A9F78263','A9F78632']);
+const withdrawn=new Set(['A9F78250','A9F78263','A9F78632']);
+// El encabezado español de A9F79210 tiene una errata: "66000 A/10 kA".
+ // Se contrasta el mismo SKU en la web oficial internacional del fabricante,
+ // que declara 6000 A IEC 60898-1 y 10 kA IEC 60947-2.
+ // NUNCA se incorpora 66000 A como poder de corte.
+const sourceDiscrepancies=Object.freeze({
+ A9F79210:Object.freeze({
+  campo:'icn_60898_ka',
+  valor_publicado_erroneo_a:66000,
+  valor_normalizado_a:6000,
+  nota:'Errata en el título Schneider España (66000 A). Confirmado: 6000 A IEC 60898-1; 10 kA IEC 60947-2.',
+  fuente_original:'https://www.se.com/es/es/product/A9F79210/',
+  fuente_contraste:'https://www.se.com/eg/en/product/A9F79210/'
+ })
+});
 function reference(curve,poles,amp){
  return (family[curve]||{})[poles] && currents.includes(Number(amp))
    ?family[curve][poles]+String(amp).padStart(2,'0'):null;
@@ -42,6 +60,7 @@ function records(){
    const retired=curve==='B'&&poles==='1P+N';
    const discontinued=withdrawn.has(ref);
    const price=Object.prototype.hasOwnProperty.call(individual,ref)?individual[ref]:null;
+   const issue=sourceDiscrepancies[ref]||null;
    // La FAQ lista expresamente las 45 refs de curva C; las B requieren prueba individual.
    const provenance=verified?'ficha_individual':curve==='C'?'faq_referencia':'patron_sin_verificar';
    const status=discontinued?'descatalogado':retired?'gama_no_comercializada':
@@ -56,6 +75,7 @@ function records(){
        modulos:null},
      url_oficial:source,fuente_tipo:verified?'ficha_oficial':curve==='C'?'faq_oficial':'hipotesis_por_patron',
      procedencia_referencia:provenance,estado_comercial:status,
+     incidencia_fuente:issue,
      admision_comparador:verified&&!retired&&!discontinued,
      nota_validacion:discontinued?'Ficha declara fin de comercialización y ausencia de sustituto confirmado':
        retired?'Schneider indica que 1P+N curva B no se comercializa en España':
@@ -68,5 +88,5 @@ function records(){
   }
  return out;
 }
-root.PanelSchneiderIC60N=Object.freeze({records,reference,FAQ,currents});
+root.PanelSchneiderIC60N=Object.freeze({records,reference,FAQ,currents,sourceDiscrepancies});
 })(window);
