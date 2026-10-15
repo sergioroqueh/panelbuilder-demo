@@ -37,7 +37,16 @@ function evaluate(d,x){
  if(category==='diferencial'&&!isRccb(x)){
   return {eligible:false,failures:['No es un RCCB independiente acreditado (puede ser RCBO o bloque diferencial).'],pending:[],matches:[]};
  }
- const at=x.atributos||{};
+ /* A family matrix/FAQ is not an individual product dossier. No fabricated
+   code or retired SKU can become a candidate merely by matching poles and In. */
+if(category==='magnetotermico'&&x.fabricante==='Schneider'&&
+   x.atributos?.gama==='Acti9 iC60N'&&x.admision_comparador!==true)
+ return {eligible:false,failures:[
+   x.estado_comercial==='descatalogado'?'Referencia descatalogada: no ofertar como vigente.':
+   x.estado_comercial==='gama_no_comercializada'?'Gama 1P+N curva B retirada en España.':
+   'Referencia pendiente de ficha individual; no apta para preselección.'
+ ],pending:['Verificar vigencia, condiciones de corte, tensión y geometría comercial.'],matches:[]};
+const at=x.atributos||{};
  function exact(label,expected,actual){
   if(expected===null||expected===undefined||String(expected)===''){
    failures.push(label+': sin definir en el modelo genérico.');return;
