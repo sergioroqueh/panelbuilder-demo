@@ -132,7 +132,7 @@ function removeDevice(){const d=dev();if(!d)return;const children=alt().devices.
 function updateProperty(name,val){const d=dev();if(!d)return;
  if(name==='parent'&&val&&circuitsFor().some(c=>c.deviceId===val)){toast('Ese equipo ya tiene una salida terminal.');render();return;}
  if(name==='parent'&&val&&alt().devices.find(x=>x.id===val)?.kind==='SPD'){toast('El SPD no puede alimentar otros aparatos.');render();return;}
- saveAction(()=>{if(name==='parent'){d.parent=val||null;}else if(['modules','amp','sensitivity','breakingKa'].includes(name)){d[name]=Number(val);}else{d[name]=val;}});}
+ saveAction(()=>{if(name==='parent'){d.parent=val||null;}else if(['modules','amp','sensitivity','breakingKa','spdUcV','spdInKa','spdImaxKa','spdUpKv','contactCoilV'].includes(name)){d[name]=Number(val);}else{d[name]=val;}});}
 function moveSelected(){const d=dev();if(!d||!alt().rows){toast('Primero calcula una propuesta de envolvente.');return;}
  const row=Number($('moveRow')?.value),pos=Number($('movePos')?.value);
  if(!E.fitsPlacement(alt().devices,d.id,row,pos,alt().rows,alt().slots)){toast('La posición seleccionada no cabe o se solapa con otro aparato.');return;}
@@ -345,7 +345,29 @@ function inspector(){const bar=activeBar();if(bar){$('inspector').innerHTML=wind
  html+=field('Número de polos','poles',null,d.poles||'2P',[['1P','1P'],['1P+N','1P+N'],['2P','2P'],['3P','3P'],['3P+N','3P+N'],['4P','4P']]);
  if(d.kind==='MCB')html+=field('Curva','curve',null,d.curve||'C',[['B','B'],['C','C'],['D','D']]);
  if(d.kind==='RCD')html+=field('Sensibilidad (mA)','sensitivity',null,d.sensitivity||30,[[10,'10 mA'],[30,'30 mA'],[100,'100 mA'],[300,'300 mA'],[500,'500 mA']])+field('Tipo diferencial','rcdType',null,d.rcdType||'A',[['AC','AC'],['A','A'],['F','F'],['B','B']]);
- html+=field('Intensidad asignada (A)','amp','number',d.amp||0);
+ if(d.kind==='SPD'){
+  html+='<div class="inspector-divider"></div><div class="section-heading">PERFIL SPD · DATOS NECESARIOS</div><p class="tiny-hint">No basta con indicar «T2». Especifica topología de red y niveles declarados. La protección de respaldo se revisa por separado.</p>';
+  html+=field('Clase SPD','spdClass',null,d.spdClass||'', [['','Sin definir'],['T2','Tipo 2'],['T1+T2+T3','Tipo 1+2+3 · requiere revisión']]);
+  html+=field('Red eléctrica','spdNetwork',null,d.spdNetwork||'', [['','Sin definir'],['TT','TT'],['TN-S','TN-S'],['TN-C','TN-C'],['IT','IT']]);
+  html+=field('Uc, tensión continua (V)','spdUcV','number',d.spdUcV||'');
+  html+=field('In mínimo 8/20 µs (kA)','spdInKa','number',d.spdInKa||'');
+  html+=field('Imax mínimo (kA)','spdImaxKa','number',d.spdImaxKa||'');
+  html+=field('Up máximo (kV), opcional','spdUpKv','number',d.spdUpKv||'');
+ }
+ if(d.kind==='CONTACT'){
+  html+='<div class="inspector-divider"></div><div class="section-heading">PERFIL DE CONTACTOR</div><p class="tiny-hint">La corriente admisible depende de la categoría de utilización: AC-1 y AC-3 no son equivalentes.</p>';
+  html+=field('Bobina de mando (V CA)','contactCoilV','number',d.contactCoilV||'');
+  html+=field('Contactos principales','contactContacts',null,d.contactContacts||'', [['','Sin definir'],['2NA','2 NA'],['3NA','3 NA'],['4NA','4 NA'],['1NA+1NC','1 NA + 1 NC']]);
+  html+=field('Categoría de empleo','contactUsageCategory',null,d.contactUsageCategory||'', [['','Sin definir'],['AC-1','AC-1'],['AC-3','AC-3'],['AC-7a','AC-7a'],['AC-7b','AC-7b']]);
+  html+=field('Funcionamiento','contactMode',null,d.contactMode||'', [['','Sin definir'],['normal','Normal'],['silencioso','Silencioso'],['manual','Manual'],['forzado','Marcha forzada']]);
+ }
+ if(d.kind==='SWITCH'){
+  html+='<div class="inspector-divider"></div><div class="section-heading">PERFIL DE SECCIONADOR</div><p class="tiny-hint">Distingue un módulo sobre carril DIN de un interruptor-seccionador para fijación a panel o puerta.</p>';
+  html+=field('Categoría de utilización','switchDuty',null,d.switchDuty||'', [['','Sin definir'],['AC-21A','AC-21A'],['AC-22A','AC-22A'],['AC-21','AC-21']]);
+  html+=field('Tipo de instalación','switchMount',null,d.switchMount||'', [['','Sin definir'],['DIN','Carril DIN'],['panel_no_din','Panel / no DIN']]);
+  html+=field('Mando','switchControl',null,d.switchControl||'', [['','Sin definir'],['modular','Modular'],['frontal','Frontal'],['lateral','Lateral']]);
+ }
+ if(d.kind!=='SPD')html+=field('Intensidad asignada (A)','amp','number',d.amp||0);
  if(d.kind==='MCB')html+=field('Poder de corte requerido (kA; preliminar)','breakingKa','number',d.breakingKa||'');
  html+=`<div class="estimated-width"><strong>Ocupación de planificación: ${d.moduleSource==='catalog'?'':'≈ '}${d.modules} M</strong><span>${d.moduleSource==='catalog'?'Anchura tomada de referencia comercial preseleccionada. Compatibilidad pendiente de validar.':'Cálculo provisional según polos. No necesitas introducir módulos; se revisará con la ficha de fabricante.'}</span></div>`;
  html+=`<div class="inspector-divider"></div><div class="section-heading">FABRICANTE Y EQUIVALENCIA</div><div class="brand-match">${state.brand==='Generico'?'Modelo genérico sin referencia comercial.':m?`<strong>Preselección: ${escape(state.brand)} · ${escape(m.ref)}</strong><br>${escape(m.name)}<br>Ancho ${m.widthMm} mm · ${m.modules} M<br><em>Pendiente de validar todos los requisitos eléctricos y accesorios.</em><br><a href="${escape(m.source)}" target="_blank" rel="noopener noreferrer" class="small-link">Consultar ficha del fabricante ↗</a>`:`No existe una preselección en la pequeña biblioteca de prueba para ${escape(state.brand)}. El componente permanece genérico.`}</div>`;

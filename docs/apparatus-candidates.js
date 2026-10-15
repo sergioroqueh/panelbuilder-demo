@@ -27,12 +27,13 @@ function isRccb(x){
  return (type.toUpperCase()==='RCCB'||/\bRCCB\b/i.test(label))
    && !/\bRCBO\b|bloque diferencial|combinad[oa]|magnetot[eé]rmic[oa]\s+diferencial/i.test(label);
 }
-function kindCategory(d){return d.kind==='MCB'||d.kind==='MCB1'?'magnetotermico':d.kind==='RCD'?'diferencial':null;}
+function kindCategory(d){return d.kind==='MCB'||d.kind==='MCB1'?'magnetotermico':d.kind==='RCD'?'diferencial':root.PanelSpecializedCandidates.family[d.kind]||null;}
 function evaluate(d,x){
  const failures=[],pending=[],matches=[];
  const category=kindCategory(d);
  if(!category)return {eligible:false,failures:['Esta familia requiere un perfil técnico específico antes de comparar.'],pending:[],matches:[]};
  if(x.categoria!==category)return {eligible:false,failures:['Función distinta del equipo genérico.'],pending:[],matches:[]};
+ if(['sobretensiones','contactor','seccionador'].includes(category))return root.PanelSpecializedCandidates.evaluate(d,x);
  if(category==='diferencial'&&!isRccb(x)){
   return {eligible:false,failures:['No es un RCCB independiente acreditado (puede ser RCBO o bloque diferencial).'],pending:[],matches:[]};
  }
@@ -129,9 +130,9 @@ function inspector(a,d){
  const category=kindCategory(d),items=list(d),eligible=items.filter(x=>x.eligible),blocked=items.filter(x=>!x.eligible),selected=a.apparatusCandidates?.[d.id];
  let out='<details class="apparatus-compare" '+(a.apparatusCandidates?.[d.id]?'open':'')+'><summary>Comparar referencias comerciales · opcional</summary><div class="section-heading">COMPARADOR DOCUMENTAL · SIN VALIDACIÓN</div>';
  if(!category){
-  return out+'<p class="tiny-hint">SPD, contactores y seccionadores necesitan perfiles propios de red, bobina, contactos y capacidades. Sin selección por parecido textual.</p></details>';
+  return out+'<p class="tiny-hint">Esta familia necesita un perfil comercial específico. No seleccionar por coincidencia textual.</p></details>';
  }
- out+='<p class="tiny-hint">Comparación sobre el dispositivo genérico sin cambiar su circuito ni ocupación. Filtramos polos, intensidad, curva o sensibilidad/tipo. Las coincidencias NO certifican un conjunto.</p>';
+ out+='<p class="tiny-hint">Comparación sobre el dispositivo genérico sin cambiar su circuito ni ocupación. Cada familia tiene comprobaciones específicas. Completa los datos del aparato antes de seleccionar referencias. Una coincidencia NO certifica el montaje.</p>';
  out+=summary(a,d);
  out+='<div class="candidate-count">'+eligible.length+' candidata(s) documentales con parámetros básicos coincidentes · '+blocked.length+' incompatible(s) o incompleta(s)</div>';
  if(eligible.length){
