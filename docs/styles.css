@@ -336,3 +336,36 @@ body.canvas-focus .editor-grid{grid-template-columns:minmax(0,1fr)}
 .apparatus-compare{margin:13px 0;padding:10px 11px;border:1px solid #e2e8f0;border-radius:8px;background:#fbfdff;font-size:12px}
 .apparatus-compare>summary{font-size:12px;color:#2764a2;font-weight:650;cursor:pointer;line-height:1.5}
 .apparatus-compare[open]>summary{padding-bottom:8px;margin-bottom:9px;border-bottom:1px solid #e1e9f2}
+
+/* Ruta del usuario con unifilar existente: controles opcionales y advertencia persistente. */
+.responsibility-banner{display:flex;flex-wrap:wrap;align-items:center;gap:7px 12px;padding:10px 14px;margin:10px 0;border:1px solid #e6c994;border-radius:9px;background:#fffaf0;color:#67491d;font-size:11px;line-height:1.5}
+.responsibility-banner strong{font-size:12px}
+.responsibility-banner>span{flex:1 1 320px}
+.responsibility-banner details{flex-basis:100%;font-size:11px;color:#6e562c}
+.responsibility-banner details summary{cursor:pointer;font-weight:650}
+.responsibility-banner details p{margin:6px 0 2px}
+.workflow-guidance{padding:12px 14px;border-radius:10px;border:1px solid #d8e2ee;background:#f9fbff;margin-bottom:14px}
+.workflow-guidance-head{display:flex;align-items:start;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.workflow-guidance-head>div{display:flex;flex-direction:column;gap:3px}
+.workflow-guidance-head strong{font-size:13px;color:#253955}
+.workflow-guidance-head span{font-size:11px;color:#65768b}
+.workflow-guidance-total{font-size:11px;color:#72561a;background:#fff6e5;border:1px solid #f1e2c2;border-radius:16px;padding:4px 9px;white-space:nowrap}
+.workflow-guidance-steps{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:11px 0}
+.workflow-guidance-step{font:inherit;background:white;border:1px solid #dce6f2;border-radius:8px;padding:9px;display:flex;align-items:flex-start;text-align:left;gap:8px;cursor:pointer;min-width:0}
+.workflow-guidance-step:hover,.workflow-guidance-step:focus-visible{border-color:#4081bf;background:#f3f9ff}
+.workflow-guidance-index{display:grid;place-items:center;flex:0 0 22px;height:22px;border-radius:50%;background:#e8f0f9;color:#376c9e;font-size:11px;font-weight:750}
+.workflow-guidance-step>span:last-child{min-width:0;display:flex;flex-direction:column;gap:3px}
+.workflow-guidance-step strong{font-size:11px;color:#304761}
+.workflow-guidance-step small{font-size:10px;line-height:1.4;color:#708199}
+.workflow-missing{border-top:1px solid #e3ebf4;padding-top:10px;font-size:11px}
+.workflow-missing>summary{cursor:pointer;font-weight:650;color:#8b5b15}
+.workflow-missing p,.workflow-ready-hint{font-size:11px;color:#67788c;line-height:1.5;margin:6px 0}
+.workflow-missing-items{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.workflow-missing-items button{border:1px solid #e5d6b8;border-radius:6px;background:#fffaf0;color:#6c522f;font-size:10px;text-align:left;padding:7px 9px;cursor:pointer}
+.workflow-missing-items button:hover{background:#fff0d6}
+.workflow-missing-items small{font-size:10px;color:#66788c;align-self:center}
+.workflow-guidance-export{border-top:1px solid #e3ebf4;display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding-top:10px;font-size:11px;color:#62748a}
+.workflow-guidance-export .button:disabled{opacity:.5;cursor:not-allowed}
+.materials-heading-actions{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+@media(max-width:980px){.workflow-guidance-steps{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:480px){.workflow-guidance-steps{grid-template-columns:minmax(0,1fr)}.responsibility-banner{font-size:11px}}

@@ -235,6 +235,15 @@ function exportSchematic(){
  document.body.appendChild(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),1500);
  toast('Árbol vertical exportado en SVG vectorial.');
 }
+function exportMaterialsCSV(){
+ if(!alt().devices.length){toast('Añade aparatos antes de exportar el listado.');return;}
+ const result=window.PanelMaterialCSV.build(alt(),state.brand,brandMatch);
+ const blob=new Blob([result.csv],{type:'text/csv;charset=utf-8'});
+ const url=URL.createObjectURL(blob),link=document.createElement('a');
+ link.href=url;link.download=`PanelBuilder_Materiales_${state.active}_v11.csv`;
+ document.body.appendChild(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),1500);
+ toast(result.count+' líneas exportadas en CSV. Revisa PVP, IVA, candidatas y compatibilidad.');
+}
 function renderSchematic(){const ds=alt().devices, errors=E.graphCheck(ds);
  const body=ds.length?`<div class="diagram-viewport" id="diagramViewport" aria-label="Lienzo del árbol unifilar. Arrastra fondo para desplazarte; rueda para moverte y Control más rueda para zoom." title="Arrastrar fondo: mover · Rueda: desplazar · Ctrl + rueda: zoom">
  ${schematicSVG(true)}<div class="diagram-hint">Arrastra para mover · Ctrl + rueda para zoom</div></div>`:'<div class="empty-view"><strong>Unifilar sin dispositivos</strong>Empieza añadiendo aparatos desde la biblioteca.</div>';
@@ -321,7 +330,7 @@ function renderMaterials(){
   const price=pvp?`<strong>${pvp.pvp_sin_iva_eur.toLocaleString('es-ES',{style:'currency',currency:'EUR'})}</strong><small class="price-provenance"><a href="${escape(pvp.fuente_url)}" target="_blank" rel="noopener noreferrer">Tarifa oficial · ${escape(pvp.fecha_vigencia)} ↗</a></small>`:catalogAmount;
   return `<tr><td>${escape(d.label)}</td><td>${escape(d.name)}</td><td>${escape(format(d))}</td><td>${ref}</td><td>${price}</td></tr>`;
  }).join('');
- return `<div class="work-card"><div class="view-heading">Materiales y PVP</div><div class="card-body"><p class="small-text">PVP de fabricante en €/ud. sin IVA exclusivamente cuando exista tarifa oficial, fecha y fuente verificadas. El catálogo ofrece precios de fabricante con fuente; la vigencia de tarifa y los IVA no confirmados permanecen pendientes. Coste de compra, descuento y mano de obra serán capítulos distintos del presupuesto.</p>${auxBill}${window.PanelEnclosureCandidates.summary(alt(),escape)}${circuitsSummary}${terminalSchedule}${busbarMaterial}<div class="table-wrap"><table class="materials-table"><thead><tr><th>Identificación</th><th>Función</th><th>Características</th><th>Referencia comercial</th><th>PVP catálogo (sin IVA)</th></tr></thead><tbody>${rows||'<tr><td colspan="5">Añade dispositivos.</td></tr>'}</tbody></table></div></div></div>`;
+ return `<div class="work-card"><div class="view-heading materials-heading-actions"><span>Materiales y PVP</span><button type="button" class="button small" data-action="exportMaterialsCSV">↓ Exportar CSV (Excel)</button></div><div class="card-body"><p class="small-text">PVP de fabricante en €/ud. sin IVA exclusivamente cuando exista tarifa oficial, fecha y fuente verificadas. El catálogo ofrece precios de fabricante con fuente; la vigencia de tarifa y los IVA no confirmados permanecen pendientes. Coste de compra, descuento y mano de obra serán capítulos distintos del presupuesto.</p>${auxBill}${window.PanelEnclosureCandidates.summary(alt(),escape)}${circuitsSummary}${terminalSchedule}${busbarMaterial}<div class="table-wrap"><table class="materials-table"><thead><tr><th>Identificación</th><th>Función</th><th>Características</th><th>Referencia comercial</th><th>PVP catálogo (sin IVA)</th></tr></thead><tbody>${rows||'<tr><td colspan="5">Añade dispositivos.</td></tr>'}</tbody></table></div></div></div>`;
 }
 function renderChecks(){const p=E.propose(alt().devices,alt().reserve);const errs=E.graphCheck(alt().devices),a=alt();const warnings=[...errs,...window.PanelCircuits.check(a),...window.PanelBusbars.check(a),...window.PanelPhysicalAux.check(a),...window.PanelEnclosureGeometry.check(a),...window.PanelConstruction.check(a),...window.PanelEnclosureCandidates.checks(a),...window.PanelApparatusCandidates.checks(a)];a.devices.filter(d=>d.kind==='SPD'&&a.devices.some(ch=>ch.parent===d.id)).forEach(d=>warnings.push('SPD '+d.label+': tiene aparatos aguas abajo. Debe revisarse como derivación, no como elemento serie.'));
  if(!a.rows)warnings.push('No se ha calculado todavía la propuesta de envolvente.');
@@ -388,6 +397,7 @@ function render(){const a=alt();
  $('brandHint').textContent=brandSummary();$('reserveInput').value=String(a.reserve);
  $('library').innerHTML=library.map(e=>`<div class="library-item"><span class="library-icon">${escape(e.symbol)}</span><span class="library-info"><strong>${escape(e.label)}</strong><small>${escape(e.poles+' · ancho automático')}</small></span><button class="round-add" data-add="${escape(e.kind)}" title="Añadir ${escape(e.label)}">+</button></div>`).join('');
  document.querySelectorAll('[data-view]').forEach(el=>el.classList.toggle('active',el.dataset.view===view));
+ $('workflowAssistant').innerHTML=window.PanelWorkflowGuidance.render(a,state.brand,escape);
  $('summary').innerHTML=[['Dispositivos',a.devices.length],['Ocupación estimada',a.devices.reduce((n,d)=>n+Number(d.modules),0)+' M'],['Propuesta',a.rows?a.rows+' × '+a.slots+' M':'Pendiente'],['Fabricante',state.brand==='Generico'?'Genérico':state.brand+' · revisar']].map(([k,v])=>`<div class="stat"><strong>${escape(v)}</strong><span>${escape(k)}</span></div>`).join('');
  const body=$('editorArea');body.className='editor-grid'+(['unifilar','physical','materials','catalog','checks'].includes(view)?' single':'');
  if(view==='both')body.innerHTML=renderSchematic()+renderCabinet();else if(view==='unifilar')body.innerHTML=renderSchematic();else if(view==='physical')body.innerHTML=renderCabinet();else if(view==='materials')body.innerHTML=renderMaterials();else if(view==='catalog')body.innerHTML=window.PanelCommercialUI.render();else body.innerHTML=renderChecks();
@@ -537,7 +547,26 @@ $('duplicateBtn').addEventListener('click',()=>{const suffix=Object.keys(state.a
 $('proposeBtn').addEventListener('click',doProposal);
 $('undoBtn').addEventListener('click',()=>{if(!undo.length)return toast('No hay cambios que deshacer.');redo.push(clone(state));state=undo.pop();persist();render();});
 $('redoBtn').addEventListener('click',()=>{if(!redo.length)return toast('No hay cambios que rehacer.');undo.push(clone(state));state=redo.pop();persist();render();});
-document.addEventListener('click',e=>{const v=e.target.closest('[data-view]');if(v){view=v.dataset.view;selectedCircuit=null;selectedBar=null;canvasFocus=false;inspectorDrawer=false;render();return;}
+document.addEventListener('click',e=>{
+ const flowDevice=e.target.closest('[data-flow-device]');
+ if(flowDevice){
+  const id=flowDevice.dataset.flowDevice;
+  if(!alt().devices.some(d=>d.id===id))return;
+  selected=id;selectedBar=null;selectedCircuit=null;view='unifilar';canvasFocus=false;inspectorDrawer=false;render();
+  const input=document.querySelector('[data-edit="'+flowDevice.dataset.flowField+'"]');
+  if(input)requestAnimationFrame(()=>input.focus());
+  return;
+ }
+ const flowExport=e.target.closest('[data-flow-export]');
+ if(flowExport){
+  if(flowExport.dataset.flowExport==='svg')exportSchematic();
+  else if(flowExport.dataset.flowExport==='csv')exportMaterialsCSV();
+  else if(flowExport.dataset.flowExport==='json')$('exportBtn').click();
+  return;
+ }
+ const flowView=e.target.closest('[data-flow-view]');
+ if(flowView){const dest=flowView.dataset.flowView;if(dest==='brand'){canvasFocus=false;inspectorDrawer=false;view='unifilar';render();$('brandSelect').focus();$('brandSelect').scrollIntoView({block:'nearest'});toast('Elige una marca en Fabricante de referencia o conserva el cuadro genérico. Después revisa las preselecciones.');return;}view=dest;selectedCircuit=null;selectedBar=null;canvasFocus=false;inspectorDrawer=false;render();return;}
+ const v=e.target.closest('[data-view]');if(v){view=v.dataset.view;selectedCircuit=null;selectedBar=null;canvasFocus=false;inspectorDrawer=false;render();return;}
  const apparPick=e.target.closest('[data-apparatus-pick]');
  if(apparPick){const id=apparPick.dataset.apparatusPick,brand=apparPick.dataset.apparatusPickBrand,ref=apparPick.dataset.apparatusRef;
   const hypothetical=clone(alt());if(!window.PanelApparatusCandidates.choose(hypothetical,id,brand,ref))return toast('No es candidata admisible con los datos críticos actuales.');
@@ -558,7 +587,7 @@ document.addEventListener('click',e=>{const v=e.target.closest('[data-view]');if
  const device=e.target.closest('[data-device]');if(device){selected=device.dataset.device;selectedCircuit=null;selectedBar=null;render();return;}
  const act=e.target.closest('[data-action]');if(act){if(act.dataset.action==='commercialMore'){window.PanelCommercialUI.more();}else if(act.dataset.action==='suggestAuxZones'){suggestAuxZones();}else if(act.dataset.action==='addNeutralBar'){addBar('N');}else if(act.dataset.action==='addEarthBar'){addBar('PE');}else if(act.dataset.action==='deleteBusbar'){deleteBar();}else if(act.dataset.action==='createCircuit'){createCircuit();}else if(act.dataset.action==='openCircuit'){selectedCircuit=circuitsFor().find(c=>c.deviceId===selected)?.id||null;render();}else if(act.dataset.action==='inspectCircuitProtection'){selectedCircuit=null;render();}else if(act.dataset.action==='deleteCircuit'){deleteCircuit();}else if(act.dataset.action==='proposePhysical'){doProposal();}else if(act.dataset.action==='toggleCanvasFocus'){canvasFocus=!canvasFocus;if(canvasFocus)view='unifilar';inspectorDrawer=false;render();}
  else if(act.dataset.action==='toggleInspector'){if(!canvasFocus){canvasFocus=true;view='unifilar';}inspectorDrawer=!inspectorDrawer;render();}
- else if(act.dataset.action==='physicalBasic'||act.dataset.action==='physicalAdvanced'){physicalDetail=act.dataset.action==='physicalAdvanced'?'advanced':'basic';try{localStorage.setItem('PanelBuilder_v11_physicalDetail',physicalDetail);}catch(err){}render();}else if(act.dataset.action==='toggleSymbols'){diagramStyle=diagramStyle==='technical'?'blocks':'technical';try{localStorage.setItem('PanelBuilder_v11_diagramStyle_v3',diagramStyle);}catch(err){}render();}else if(act.dataset.action==='zoomIn')zoomCanvas(1.25);else if(act.dataset.action==='zoomOut')zoomCanvas(.8);else if(act.dataset.action==='fitDiagram')fitCanvas();else if(act.dataset.action==='focusSelected')focusSelected();else if(act.dataset.action==='centerRoot')centerRoot();else if(act.dataset.action==='delete')removeDevice();else if(act.dataset.action==='move')moveSelected();else if(act.dataset.action==='exportSchematic')exportSchematic();else if(act.dataset.action==='insertUpstream'){const d=dev();if(d)openInsert(d.id,d.parent||null);}else if(act.dataset.action==='insertBranch'){const d=dev();if(d)openInsert(null,d.id,'branch');}else if(act.dataset.action==='expandSchematic'){view='unifilar';render();}return;}
+ else if(act.dataset.action==='physicalBasic'||act.dataset.action==='physicalAdvanced'){physicalDetail=act.dataset.action==='physicalAdvanced'?'advanced':'basic';try{localStorage.setItem('PanelBuilder_v11_physicalDetail',physicalDetail);}catch(err){}render();}else if(act.dataset.action==='toggleSymbols'){diagramStyle=diagramStyle==='technical'?'blocks':'technical';try{localStorage.setItem('PanelBuilder_v11_diagramStyle_v3',diagramStyle);}catch(err){}render();}else if(act.dataset.action==='zoomIn')zoomCanvas(1.25);else if(act.dataset.action==='zoomOut')zoomCanvas(.8);else if(act.dataset.action==='fitDiagram')fitCanvas();else if(act.dataset.action==='focusSelected')focusSelected();else if(act.dataset.action==='centerRoot')centerRoot();else if(act.dataset.action==='delete')removeDevice();else if(act.dataset.action==='move')moveSelected();else if(act.dataset.action==='exportSchematic')exportSchematic();else if(act.dataset.action==='exportMaterialsCSV')exportMaterialsCSV();else if(act.dataset.action==='insertUpstream'){const d=dev();if(d)openInsert(d.id,d.parent||null);}else if(act.dataset.action==='insertBranch'){const d=dev();if(d)openInsert(null,d.id,'branch');}else if(act.dataset.action==='expandSchematic'){view='unifilar';render();}return;}
 });
 document.addEventListener('input',e=>{if(e.target.matches('[data-commercial-search]'))window.PanelCommercialUI.update(e);});
 document.addEventListener('change',e=>{if(window.PanelCommercialUI.update(e))return;if(e.target.dataset.constructionField){const key=e.target.dataset.constructionField,value=e.target.value;const copied=clone(alt());if(!window.PanelConstruction.set(copied,key,value)){toast("Dimensión de componente no válida.");return;}setTimeout(()=>saveAction(()=>window.PanelConstruction.set(alt(),key,value),{electrical:false}),0);return;}if(e.target.dataset.geomField){const field=e.target.dataset.geomField,value=e.target.value;if(!window.PanelEnclosureGeometry.set({...alt()},field,value)){toast('Medida no válida (0 a 10000 mm).');render();return;}setTimeout(()=>saveAction(()=>window.PanelEnclosureGeometry.set(alt(),field,value),{electrical:false}),0);return;}if(e.target.dataset.auxGroup){setAuxZone(e.target.dataset.auxGroup,e.target.dataset.auxId,e.target.value);return;}if(e.target.dataset.busbarEdit){editBar(e.target.dataset.busbarEdit,e.target.value);return;}if(e.target.dataset.spdPe){setSpdPeBar(e.target.value);return;}if(e.target.dataset.circuitEdit){updateCircuit(e.target.dataset.circuitEdit,e.target.value);return;}if(e.target.id!=='jumpDevice')return;selected=e.target.value;selectedCircuit=null;render();requestAnimationFrame(focusSelected);});
