@@ -37,6 +37,21 @@ const withdrawn=new Set(['A9F78250','A9F78263','A9F78632']);
  // Se contrasta el mismo SKU en la web oficial internacional del fabricante,
  // que declara 6000 A IEC 60898-1 y 10 kA IEC 60947-2.
  // NUNCA se incorpora 66000 A como poder de corte.
+/* Geometría verificada SOLO para este SKU, a partir de una ficha de datos
+ * emitida por Schneider Electric el 25/09/2020, hospedada por distribuidor.
+ * La geometría no certifica disponibilidad, conexión o montaje completo. */
+const verifiedGeometry=Object.freeze({
+ A9F79210:Object.freeze({
+  ancho_mm:36,alto_mm:85,profundidad_mm:78.5,modulos:2,
+  montaje:'carril_DIN',pasos_9_mm:4,
+  bornes_rigido_max_mm2:25,bornes_flexible_max_mm2:16,
+  pelado_mm:14,par_apriete_nm:2,
+  fecha_ficha:'2020-09-25',
+  url_fuente:'https://eriacomponentes.es/wp-content/uploads/2020/09/interruptor-automatico-magnetotermico-ic60n-2p-10a-curva-c.pdf',
+  fabricante_documento:'Schneider Electric',
+  estado:'geometria_documentada_no_montaje_validado'
+ })
+});
 const sourceDiscrepancies=Object.freeze({
  A9F79210:Object.freeze({
   campo:'icn_60898_ka',
@@ -61,6 +76,7 @@ function records(){
    const discontinued=withdrawn.has(ref);
    const price=Object.prototype.hasOwnProperty.call(individual,ref)?individual[ref]:null;
    const issue=sourceDiscrepancies[ref]||null;
+   const geom=verifiedGeometry[ref]||null;
    // La FAQ lista expresamente las 45 refs de curva C; las B requieren prueba individual.
    const provenance=verified?'ficha_individual':curve==='C'?'faq_referencia':'patron_sin_verificar';
    const status=discontinued?'descatalogado':retired?'gama_no_comercializada':
@@ -72,10 +88,16 @@ function records(){
      atributos:{gama:'Acti9 iC60N',polos:poles,amp,curva:curve,
        icn_60898_ka:6,icu_60947_2_ka:10,
        polos_neutro_protegido:poles==='1P+N'?'fase protegida, N conmutado':'consultar esquema de polos',
-       modulos:null},
+       modulos:geom?geom.modulos:null,
+       ...(geom?{ancho_mm:geom.ancho_mm,alto_mm:geom.alto_mm,
+         profundidad_mm:geom.profundidad_mm,pasos_9_mm:geom.pasos_9_mm,
+         montaje:geom.montaje,bornes_rigido_max_mm2:geom.bornes_rigido_max_mm2,
+         bornes_flexible_max_mm2:geom.bornes_flexible_max_mm2,pelado_mm:geom.pelado_mm,
+         par_apriete_nm:geom.par_apriete_nm}:{})},
      url_oficial:source,fuente_tipo:verified?'ficha_oficial':curve==='C'?'faq_oficial':'hipotesis_por_patron',
      procedencia_referencia:provenance,estado_comercial:status,
      incidencia_fuente:issue,
+     geometria_documental:geom?{fuente:geom.url_fuente,fecha_ficha:geom.fecha_ficha,estado:geom.estado}:null,
      admision_comparador:verified&&!retired&&!discontinued,
      nota_validacion:discontinued?'Ficha declara fin de comercialización y ausencia de sustituto confirmado':
        retired?'Schneider indica que 1P+N curva B no se comercializa en España':
@@ -88,5 +110,5 @@ function records(){
   }
  return out;
 }
-root.PanelSchneiderIC60N=Object.freeze({records,reference,FAQ,currents,sourceDiscrepancies});
+root.PanelSchneiderIC60N=Object.freeze({records,reference,FAQ,currents,sourceDiscrepancies,verifiedGeometry});
 })(window);
