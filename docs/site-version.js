@@ -16,7 +16,7 @@
           label.title = 'Despliegue: ' + date.toLocaleString('es-ES');
         }
       }
-      link.href = 'https://github.com/sergioroqueh/panelbuilder-dev/commit/' + info.sha;
+      link.href = info.publication === 'panelbuilder-demo' ? 'https://github.com/sergioroqueh/panelbuilder-demo/commits/main' : 'https://github.com/sergioroqueh/panelbuilder-dev/commit/' + info.sha;
       link.hidden = false;
     })
     .catch(() => { /* Sin metadatos: editor funcional sin cambio de estado. */ });
