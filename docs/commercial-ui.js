@@ -25,6 +25,10 @@ function rows(items){
     o.admision_comparador?'Ficha individual · revisión de montaje pendiente':
     'Código en FAQ · falta ficha individual')+'</small>':'';
 
+  const issue=o.incidencia_fuente;
+  const discrepancy=issue?
+    '<div class="catalog-source-issue" data-source-issue="'+escape(o.referencia)+'"><strong>Errata detectada en el fabricante:</strong> '+
+    escape(issue.nota)+' <a class="small-link" target="_blank" rel="noopener noreferrer" href="'+escape(issue.fuente_contraste)+'">Contraste oficial ↗</a></div>':'';
   const relations=root.PanelAccessoryLinks.get(o.fabricante,o.referencia);
   const related=relations.length?`<div class="commercial-inline-relations" data-commercial-links="${escape(o.referencia)}">
    <strong class="commercial-inline-title">${relations.length} vínculo(s) documentado(s)</strong>
@@ -44,7 +48,7 @@ function rows(items){
    '<small>Sin relaciones estudiadas</small>';
   return `<tr data-commercial-ref="${escape(o.referencia)}" data-commercial-brand="${escape(o.fabricante)}">
    <td><strong>${escape(o.referencia)}</strong><small>${escape(o.fabricante)}</small>${status}</td>
-   <td><strong>${escape(o.descripcion)}</strong><small>${escape(o.categoria)}</small><small class="catalog-attrs" title="${escape(attrs)}">${escape(attrs)}</small></td>
+   <td><strong>${escape(o.descripcion)}</strong><small>${escape(o.categoria)}</small><small class="catalog-attrs" title="${escape(attrs)}">${escape(attrs)}</small>${discrepancy}</td>
    <td>${pvp}<small>${escape(o.fecha_consulta)} · ES</small></td>
    <td><span class="badge amber">Montaje pendiente</span>${related}<small>Prohibida la asociación automática</small></td>
    <td><a class="small-link" target="_blank" rel="noopener noreferrer" href="${escape(o.url_oficial)}" aria-label="Abrir fuente oficial ${escape(o.fabricante+' '+o.referencia)}">${src} ↗</a></td>
