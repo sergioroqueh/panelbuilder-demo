@@ -110,7 +110,7 @@ function deleteCircuit(){
 }
 
 function validProject(p){if(!p||![3,4,5,6,8,9,10,11].includes(p.version)||!p.alternatives||!p.alternatives[p.active]||!Array.isArray(p.alternatives[p.active].devices))return false;
- return Object.values(p.alternatives).every(a=>Array.isArray(a.devices)&&window.PanelCircuits.validAll(a.circuits,a.devices)&&window.PanelBusbars.validAll(a.busbars,a.devices)&&window.PanelPhysicalAux.validAll(a)&&window.PanelEnclosureGeometry.valid(a.enclosureGeometry)&&window.PanelConstruction.valid(a.physicalConstruction)&&window.PanelEnclosureCandidates.valid(a.enclosureSelection)&&a.devices.length<=350&&a.devices.every(d=>d&&typeof d.id==='string'&&typeof d.label==='string'&&Number.isInteger(Number(d.modules))&&d.modules>=1&&d.modules<=48)&&E.graphCheck(a.devices).length===0);}
+ return Object.values(p.alternatives).every(a=>Array.isArray(a.devices)&&window.PanelCircuits.validAll(a.circuits,a.devices)&&window.PanelBusbars.validAll(a.busbars,a.devices)&&window.PanelPhysicalAux.validAll(a)&&window.PanelEnclosureGeometry.valid(a.enclosureGeometry)&&window.PanelConstruction.valid(a.physicalConstruction)&&window.PanelEnclosureCandidates.valid(a.enclosureSelection)&&window.PanelApparatusCandidates.valid(a)&&a.devices.length<=350&&a.devices.every(d=>d&&typeof d.id==='string'&&typeof d.label==='string'&&Number.isInteger(Number(d.modules))&&d.modules>=1&&d.modules<=48)&&E.graphCheck(a.devices).length===0);}
 function persist(){try{localStorage.setItem(key,JSON.stringify(state))}catch(e){}}
 function syncWidths(){alt().devices=alt().devices.map(d=>{
  const m=brandMatch(d); return {...d,modules:m?m.modules:E.estimateModules(d),moduleSource:m?'catalog':'estimate',matchedRef:m?m.ref:null};});}
@@ -128,7 +128,7 @@ function addDevice(kind){const base=library.find(x=>x.kind===kind);if(!base)retu
  if(dev()?.kind==='SPD'){toast('El SPD debe ser una derivación de protección, no el origen de otros aparatos.');return;}
  saveAction(()=>{const id='d'+(state.counter++);const parent=dev()?.id||alt().devices[0]?.id||null;selectedCircuit=null;selectedBar=null;const d={...clone(base),id,kind:typeOf(base.kind),label:suggestLabel(typeOf(base.kind)),parent,row:null,pos:null};delete d.symbol;selected=id;alt().devices.push(d);});toast('Dispositivo genérico añadido. Define su conexión en Propiedades.');}
 function removeDevice(){const d=dev();if(!d)return;const children=alt().devices.filter(x=>x.parent===d.id);if(children.length&&!confirm(`El dispositivo ${d.label} tiene ${children.length} derivación(es). ¿Eliminarlo y dejar esas conexiones sin origen?`))return;
- saveAction(()=>{const removed=selected;alt().busbars=window.PanelBusbars.all(alt()).map(b=>b.rcdId===removed?{...b,rcdId:''}:b);const removedCircuits=circuitsFor().filter(c=>c.deviceId===selected).map(c=>c.id);for(const id of removedCircuits){if(alt().auxiliaryZones?.circuits)delete alt().auxiliaryZones.circuits[id];}alt().circuits=circuitsFor().filter(c=>c.deviceId!==selected);alt().devices=alt().devices.filter(x=>x.id!==selected).map(x=>x.parent===selected?{...x,parent:null}:x);selectedCircuit=null;selectedBar=null;selected=alt().devices[0]?.id||null;});}
+ saveAction(()=>{const removed=selected;if(alt().apparatusCandidates)delete alt().apparatusCandidates[removed];alt().busbars=window.PanelBusbars.all(alt()).map(b=>b.rcdId===removed?{...b,rcdId:''}:b);const removedCircuits=circuitsFor().filter(c=>c.deviceId===selected).map(c=>c.id);for(const id of removedCircuits){if(alt().auxiliaryZones?.circuits)delete alt().auxiliaryZones.circuits[id];}alt().circuits=circuitsFor().filter(c=>c.deviceId!==selected);alt().devices=alt().devices.filter(x=>x.id!==selected).map(x=>x.parent===selected?{...x,parent:null}:x);selectedCircuit=null;selectedBar=null;selected=alt().devices[0]?.id||null;});}
 function updateProperty(name,val){const d=dev();if(!d)return;
  if(name==='parent'&&val&&circuitsFor().some(c=>c.deviceId===val)){toast('Ese equipo ya tiene una salida terminal.');render();return;}
  if(name==='parent'&&val&&alt().devices.find(x=>x.id===val)?.kind==='SPD'){toast('El SPD no puede alimentar otros aparatos.');render();return;}
@@ -311,7 +311,9 @@ function renderMaterials(){
  const rows=alt().devices.map(d=>{
   const match=brandMatch(d),pvp=match?window.PanelPricebook?.find(state.brand,match.ref):null;
   const commercial=match?window.PanelCommercial.get(state.brand,match.ref):null;
-  const ref=match?`<span class="badge green">${escape(state.brand)} ${escape(match.ref)}</span>`:'<span class="badge amber">Pendiente de asignar</span>';
+  const candidate=window.PanelApparatusCandidates.getSelection(alt(),d);
+  const documentary=candidate?`<small class="apparatus-bom-doc" data-apparatus-bom="${escape(d.id)}">Candidata documental: ${escape(candidate.selection.fabricante)} ${escape(candidate.selection.referencia)} · ${candidate.review.eligible?'Sin validar':'Incompatible con valores actuales'}</small>`:'';
+  const ref=(match?`<span class="badge green">${escape(state.brand)} ${escape(match.ref)}</span>`:'<span class="badge amber">Sin referencia aplicada al modelo</span>')+documentary;
   const catalogAmount=commercial?.pvp_sin_iva_eur!==null&&commercial?.pvp_sin_iva_eur!==undefined?
    `<strong>${commercial.pvp_sin_iva_eur.toLocaleString('es-ES',{style:'currency',currency:'EUR'})}</strong><small class="price-provenance"><a href="${escape(commercial.url_oficial)}" target="_blank" rel="noopener noreferrer">PVP recomendado sin IVA · ${escape(commercial.fecha_consulta)} ↗</a> · vigencia sin acreditar</small>`:
    commercial&&commercial.precio_publicado_eur!==null?
@@ -321,7 +323,7 @@ function renderMaterials(){
  }).join('');
  return `<div class="work-card"><div class="view-heading">Materiales y PVP</div><div class="card-body"><p class="small-text">PVP de fabricante en €/ud. sin IVA exclusivamente cuando exista tarifa oficial, fecha y fuente verificadas. El catálogo ofrece precios de fabricante con fuente; la vigencia de tarifa y los IVA no confirmados permanecen pendientes. Coste de compra, descuento y mano de obra serán capítulos distintos del presupuesto.</p>${auxBill}${window.PanelEnclosureCandidates.summary(alt(),escape)}${circuitsSummary}${terminalSchedule}${busbarMaterial}<div class="table-wrap"><table class="materials-table"><thead><tr><th>Identificación</th><th>Función</th><th>Características</th><th>Referencia comercial</th><th>PVP catálogo (sin IVA)</th></tr></thead><tbody>${rows||'<tr><td colspan="5">Añade dispositivos.</td></tr>'}</tbody></table></div></div></div>`;
 }
-function renderChecks(){const p=E.propose(alt().devices,alt().reserve);const errs=E.graphCheck(alt().devices),a=alt();const warnings=[...errs,...window.PanelCircuits.check(a),...window.PanelBusbars.check(a),...window.PanelPhysicalAux.check(a),...window.PanelEnclosureGeometry.check(a),...window.PanelConstruction.check(a),...window.PanelEnclosureCandidates.checks(a)];a.devices.filter(d=>d.kind==='SPD'&&a.devices.some(ch=>ch.parent===d.id)).forEach(d=>warnings.push('SPD '+d.label+': tiene aparatos aguas abajo. Debe revisarse como derivación, no como elemento serie.'));
+function renderChecks(){const p=E.propose(alt().devices,alt().reserve);const errs=E.graphCheck(alt().devices),a=alt();const warnings=[...errs,...window.PanelCircuits.check(a),...window.PanelBusbars.check(a),...window.PanelPhysicalAux.check(a),...window.PanelEnclosureGeometry.check(a),...window.PanelConstruction.check(a),...window.PanelEnclosureCandidates.checks(a),...window.PanelApparatusCandidates.checks(a)];a.devices.filter(d=>d.kind==='SPD'&&a.devices.some(ch=>ch.parent===d.id)).forEach(d=>warnings.push('SPD '+d.label+': tiene aparatos aguas abajo. Debe revisarse como derivación, no como elemento serie.'));
  if(!a.rows)warnings.push('No se ha calculado todavía la propuesta de envolvente.');
  if(a.layoutDirty&&a.rows)warnings.push('Se han modificado datos del cuadro desde la última distribución automática. Es necesario recalcular o revisar la ubicación.');
  if(state.brand!=='Generico')warnings.push(brandSummary());
@@ -347,6 +349,7 @@ function inspector(){const bar=activeBar();if(bar){$('inspector').innerHTML=wind
  if(d.kind==='MCB')html+=field('Poder de corte requerido (kA; preliminar)','breakingKa','number',d.breakingKa||'');
  html+=`<div class="estimated-width"><strong>Ocupación de planificación: ${d.moduleSource==='catalog'?'':'≈ '}${d.modules} M</strong><span>${d.moduleSource==='catalog'?'Anchura tomada de referencia comercial preseleccionada. Compatibilidad pendiente de validar.':'Cálculo provisional según polos. No necesitas introducir módulos; se revisará con la ficha de fabricante.'}</span></div>`;
  html+=`<div class="inspector-divider"></div><div class="section-heading">FABRICANTE Y EQUIVALENCIA</div><div class="brand-match">${state.brand==='Generico'?'Modelo genérico sin referencia comercial.':m?`<strong>Preselección: ${escape(state.brand)} · ${escape(m.ref)}</strong><br>${escape(m.name)}<br>Ancho ${m.widthMm} mm · ${m.modules} M<br><em>Pendiente de validar todos los requisitos eléctricos y accesorios.</em><br><a href="${escape(m.source)}" target="_blank" rel="noopener noreferrer" class="small-link">Consultar ficha del fabricante ↗</a>`:`No existe una preselección en la pequeña biblioteca de prueba para ${escape(state.brand)}. El componente permanece genérico.`}</div>`;
+ html+=window.PanelApparatusCandidates.inspector(alt(),d);
  const childCount=alt().devices.filter(x=>x.parent===d.id).length;
  const circuit=circuitsFor().find(c=>c.deviceId===d.id);
  if(circuit)html+=`<div class="inspector-divider"></div><div class="section-heading">SALIDA DE CIRCUITO</div><button class="button full" data-action="openCircuit">☷ Editar salida ${escape(circuit.code)}</button><p class="tiny-hint">${escape(circuit.destination||'Destino pendiente')} · ${escape(circuit.configuration||'conductores sin definir')}</p>`;
@@ -513,6 +516,13 @@ $('proposeBtn').addEventListener('click',doProposal);
 $('undoBtn').addEventListener('click',()=>{if(!undo.length)return toast('No hay cambios que deshacer.');redo.push(clone(state));state=undo.pop();persist();render();});
 $('redoBtn').addEventListener('click',()=>{if(!redo.length)return toast('No hay cambios que rehacer.');undo.push(clone(state));state=redo.pop();persist();render();});
 document.addEventListener('click',e=>{const v=e.target.closest('[data-view]');if(v){view=v.dataset.view;selectedCircuit=null;selectedBar=null;canvasFocus=false;inspectorDrawer=false;render();return;}
+ const apparPick=e.target.closest('[data-apparatus-pick]');
+ if(apparPick){const id=apparPick.dataset.apparatusPick,brand=apparPick.dataset.apparatusPickBrand,ref=apparPick.dataset.apparatusRef;
+  const hypothetical=clone(alt());if(!window.PanelApparatusCandidates.choose(hypothetical,id,brand,ref))return toast('No es candidata admisible con los datos críticos actuales.');
+  saveAction(()=>window.PanelApparatusCandidates.choose(alt(),id,brand,ref),{electrical:false});
+  toast('Referencia guardada SOLO como candidata documental. El aparato y su posición siguen siendo genéricos.');return;}
+ const apparClear=e.target.closest('[data-apparatus-clear]');
+ if(apparClear){const id=apparClear.dataset.apparatusClear;saveAction(()=>window.PanelApparatusCandidates.clear(alt(),id),{electrical:false});toast('Candidata documental eliminada.');return;}
  const pick=e.target.closest('[data-enclosure-pick]');
  if(pick){const brand=pick.dataset.enclosurePickBrand,ref=pick.dataset.enclosurePick;const candidate=clone(alt());if(!window.PanelEnclosureCandidates.choose(candidate,brand,ref))return toast('Esa envolvente no figura entre las candidatas por capacidad modular.');saveAction(()=>window.PanelEnclosureCandidates.choose(alt(),brand,ref),{electrical:false});toast('Referencia guardada como CANDIDATA. No se ha validado el montaje ni alterado la geometría.');return;}
  const clearEnclosure=e.target.closest('[data-enclosure-clear]');

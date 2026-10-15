@@ -319,3 +319,20 @@ body.canvas-focus .editor-grid{grid-template-columns:minmax(0,1fr)}
 .enclosure-selected p{margin:7px 0 0;font-size:12px}
 .enclosure-selected p.small-text{font-size:11px;line-height:1.5}
 .enclosure-selected-alert{color:#9a5708;font-size:12px;font-weight:700}
+
+/* Biblioteca documental de MCB/RCCB: estado NO validado y bloqueos explícitos. */
+.apparatus-candidates{display:flex;flex-direction:column;gap:9px;margin:10px 0}
+.apparatus-candidate{border:1px solid #d9e3ef;border-radius:8px;padding:10px;display:flex;flex-direction:column;gap:5px;background:#f8fbff;color:#31445c}
+.apparatus-candidate strong{font-size:12px}.apparatus-candidate p{margin:0;font-size:12px;line-height:1.4}
+.apparatus-candidate small{font-size:11px;line-height:1.4;color:#67788c;overflow-wrap:anywhere}
+.apparatus-candidate a{align-self:flex-start}.apparatus-candidate button{align-self:flex-start;white-space:normal;text-align:left}
+.apparatus-selected{display:grid;gap:6px;margin:10px 0;padding:11px;border:1px solid #e8c57f;background:#fff8ed;border-radius:8px;color:#82571a}
+.apparatus-selected strong{font-size:12px}.apparatus-selected p{font-size:11px;margin:0;line-height:1.4}
+.apparatus-selected a{font-size:11px}.apparatus-selected button{justify-self:start}
+.apparatus-blocked{margin:10px 0;padding:10px;border-radius:7px;border:1px solid #dfe4ee;background:#f8fafc;font-size:11px}
+.apparatus-blocked summary{cursor:pointer;color:#51677e}.apparatus-blocked p{font-size:11px;line-height:1.4;border-top:1px solid #e4eaf0;padding:8px 0;margin:0}
+.apparatus-bom-doc{display:block;color:#925d0d;line-height:1.5;margin-top:6px;font-size:11px}
+
+.apparatus-compare{margin:13px 0;padding:10px 11px;border:1px solid #e2e8f0;border-radius:8px;background:#fbfdff;font-size:12px}
+.apparatus-compare>summary{font-size:12px;color:#2764a2;font-weight:650;cursor:pointer;line-height:1.5}
+.apparatus-compare[open]>summary{padding-bottom:8px;margin-bottom:9px;border-bottom:1px solid #e1e9f2}
