@@ -19,6 +19,7 @@ if(ic60)for(const candidate of ic60.records()){
  previous.admision_comparador=!['descatalogado','gama_no_comercializada'].includes(candidate.estado_comercial);
  previous.nota_validacion=candidate.nota_validacion;
  previous.incidencia_fuente=candidate.incidencia_fuente||null;
+ previous.geometria_documental=candidate.geometria_documental||null;
 }
 const searchable=(x)=>[x.fabricante,x.categoria,x.referencia,x.descripcion,...Object.values(x.atributos)].join(' ').toLocaleLowerCase('es');
 const all=()=>records.slice();
