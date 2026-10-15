@@ -34,7 +34,7 @@ let physicalDetail='basic';
 try{physicalDetail=localStorage.getItem('PanelBuilder_v11_physicalDetail')==='advanced'?'advanced':'basic';}catch(err){}
 try{diagramStyle=localStorage.getItem('PanelBuilder_v11_diagramStyle_v3')==='blocks'?'blocks':'technical';}catch(err){}
 try {const raw=localStorage.getItem(key)||localStorage.getItem('PanelBuilder_v10_workbench')||localStorage.getItem('PanelBuilder_v09_workbench')||localStorage.getItem('PanelBuilder_v06_workbench')||localStorage.getItem('PanelBuilder_v05_workbench')||localStorage.getItem('PanelBuilder_v04_workbench')||localStorage.getItem('PanelBuilder_v03_workbench');
- if(raw){const parsed=JSON.parse(raw);if(validProject(parsed)){state=parsed;const isLegacy=![6,8,9,10,11].includes(state.version);state.version=11;Object.values(state.alternatives).forEach(a=>{a.circuits=Array.isArray(a.circuits)?a.circuits:[];a.busbars=Array.isArray(a.busbars)?a.busbars:[];a.auxiliaryZones=a.auxiliaryZones||{bars:{},circuits:{}};if(isLegacy)a.assignments={};else a.assignments=a.assignments||{};a.devices=a.devices.map(d=>{const record=M.normalized(d,state.brand,a.assignments?.[d.id]);return {...d,modules:record?record.modules:E.estimateModules(d),moduleSource:record?'catalog':'estimate'};});if(isLegacy)a.layoutDirty=true;});}}
+ if(raw){const parsed=JSON.parse(raw);if(validProject(parsed)){state=parsed;const isLegacy=![6,8,9,10,11].includes(state.version);state.version=11;Object.values(state.alternatives).forEach(a=>{a.circuits=Array.isArray(a.circuits)?a.circuits:[];a.busbars=Array.isArray(a.busbars)?a.busbars:[];a.auxiliaryZones=a.auxiliaryZones||{bars:{},circuits:{}};if(isLegacy)a.assignments={};else a.assignments=a.assignments||{};a.devices=a.devices.map(d=>{const record=state.brand==='Generico'?null:(window.PanelCommercialPlacement.resolve(d,a,state.brand)||M.normalized(d,state.brand,a.assignments?.[d.id]));return {...d,modules:record?record.modules:E.estimateModules(d),moduleSource:record?'catalog':'estimate',matchedRef:record?.ref||null};});if(isLegacy)a.layoutDirty=true;});}}
 }catch(e){}
 const alt=()=>state.alternatives[state.active],dev=()=>alt().devices.find(d=>d.id===selected);
 function circuitsFor(a=alt()){return window.PanelCircuits.all(a);}
@@ -110,12 +110,12 @@ function deleteCircuit(){
 }
 
 function validProject(p){if(!p||![3,4,5,6,8,9,10,11].includes(p.version)||!p.alternatives||!p.alternatives[p.active]||!Array.isArray(p.alternatives[p.active].devices))return false;
- return Object.values(p.alternatives).every(a=>Array.isArray(a.devices)&&window.PanelCircuits.validAll(a.circuits,a.devices)&&window.PanelBusbars.validAll(a.busbars,a.devices)&&window.PanelPhysicalAux.validAll(a)&&window.PanelEnclosureGeometry.valid(a.enclosureGeometry)&&window.PanelConstruction.valid(a.physicalConstruction)&&window.PanelEnclosureCandidates.valid(a.enclosureSelection)&&window.PanelApparatusCandidates.valid(a)&&a.devices.length<=350&&a.devices.every(d=>d&&typeof d.id==='string'&&typeof d.label==='string'&&Number.isInteger(Number(d.modules))&&d.modules>=1&&d.modules<=48)&&E.graphCheck(a.devices).length===0);}
+ return Object.values(p.alternatives).every(a=>Array.isArray(a.devices)&&window.PanelCircuits.validAll(a.circuits,a.devices)&&window.PanelBusbars.validAll(a.busbars,a.devices)&&window.PanelPhysicalAux.validAll(a)&&window.PanelEnclosureGeometry.valid(a.enclosureGeometry)&&window.PanelConstruction.valid(a.physicalConstruction)&&window.PanelEnclosureCandidates.valid(a.enclosureSelection)&&window.PanelApparatusCandidates.valid(a)&&window.PanelCommercialPlacement.valid(a)&&a.devices.length<=350&&a.devices.every(d=>d&&typeof d.id==='string'&&typeof d.label==='string'&&Number.isInteger(Number(d.modules))&&d.modules>=1&&d.modules<=48)&&E.graphCheck(a.devices).length===0);}
 function persist(){try{localStorage.setItem(key,JSON.stringify(state))}catch(e){}}
 function syncWidths(){alt().devices=alt().devices.map(d=>{
  const m=brandMatch(d); return {...d,modules:m?m.modules:E.estimateModules(d),moduleSource:m?'catalog':'estimate',matchedRef:m?m.ref:null};});}
-function syncWidthsAcrossAlternatives(){for(const a of Object.values(state.alternatives)){a.assignments={};a.devices=E.recalcWidths(a.devices,'Generico');a.layoutDirty=true;}}
-function saveAction(fn,{electrical=true}={}){undo.push(clone(state));if(undo.length>50)undo.shift();redo=[];fn();if(electrical)alt().assignments={};syncWidths();if(electrical){alt().layoutDirty=true;}persist();render();}
+function syncWidthsAcrossAlternatives(){for(const a of Object.values(state.alternatives)){a.assignments={};a.physicalSelections={};a.devices=E.recalcWidths(a.devices,'Generico');a.layoutDirty=true;}}
+function saveAction(fn,{electrical=true}={}){undo.push(clone(state));if(undo.length>50)undo.shift();redo=[];fn();if(electrical){alt().assignments={};alt().physicalSelections={};}syncWidths();if(electrical){alt().layoutDirty=true;}persist();render();}
 function toast(msg){const el=$('toast');el.textContent=msg;el.classList.add('visible');clearTimeout(noticeTimer);noticeTimer=setTimeout(()=>el.classList.remove('visible'),3100);}
 function format(d){let s=d.poles||'';if(d.kind==='MCB')s+=` · ${d.amp||'?'} A · ${d.curve||'?'}${d.amp?'':''}`;
  else if(d.kind==='RCD')s+=` · ${d.amp||'?'} A · ${d.sensitivity||'?'} mA · ${d.rcdType||'?'} `;
@@ -128,7 +128,7 @@ function addDevice(kind){const base=library.find(x=>x.kind===kind);if(!base)retu
  if(dev()?.kind==='SPD'){toast('El SPD debe ser una derivación de protección, no el origen de otros aparatos.');return;}
  saveAction(()=>{const id='d'+(state.counter++);const parent=dev()?.id||alt().devices[0]?.id||null;selectedCircuit=null;selectedBar=null;const d={...clone(base),id,kind:typeOf(base.kind),label:suggestLabel(typeOf(base.kind)),parent,row:null,pos:null};delete d.symbol;selected=id;alt().devices.push(d);});toast('Dispositivo genérico añadido. Define su conexión en Propiedades.');}
 function removeDevice(){const d=dev();if(!d)return;const children=alt().devices.filter(x=>x.parent===d.id);if(children.length&&!confirm(`El dispositivo ${d.label} tiene ${children.length} derivación(es). ¿Eliminarlo y dejar esas conexiones sin origen?`))return;
- saveAction(()=>{const removed=selected;if(alt().apparatusCandidates)delete alt().apparatusCandidates[removed];alt().busbars=window.PanelBusbars.all(alt()).map(b=>b.rcdId===removed?{...b,rcdId:''}:b);const removedCircuits=circuitsFor().filter(c=>c.deviceId===selected).map(c=>c.id);for(const id of removedCircuits){if(alt().auxiliaryZones?.circuits)delete alt().auxiliaryZones.circuits[id];}alt().circuits=circuitsFor().filter(c=>c.deviceId!==selected);alt().devices=alt().devices.filter(x=>x.id!==selected).map(x=>x.parent===selected?{...x,parent:null}:x);selectedCircuit=null;selectedBar=null;selected=alt().devices[0]?.id||null;});}
+ saveAction(()=>{const removed=selected;if(alt().apparatusCandidates)delete alt().apparatusCandidates[removed];if(alt().physicalSelections)delete alt().physicalSelections[removed];alt().busbars=window.PanelBusbars.all(alt()).map(b=>b.rcdId===removed?{...b,rcdId:''}:b);const removedCircuits=circuitsFor().filter(c=>c.deviceId===selected).map(c=>c.id);for(const id of removedCircuits){if(alt().auxiliaryZones?.circuits)delete alt().auxiliaryZones.circuits[id];}alt().circuits=circuitsFor().filter(c=>c.deviceId!==selected);alt().devices=alt().devices.filter(x=>x.id!==selected).map(x=>x.parent===selected?{...x,parent:null}:x);selectedCircuit=null;selectedBar=null;selected=alt().devices[0]?.id||null;});}
 function updateProperty(name,val){const d=dev();if(!d)return;
  if(name==='parent'&&val&&circuitsFor().some(c=>c.deviceId===val)){toast('Ese equipo ya tiene una salida terminal.');render();return;}
  if(name==='parent'&&val&&alt().devices.find(x=>x.id===val)?.kind==='SPD'){toast('El SPD no puede alimentar otros aparatos.');render();return;}
@@ -144,8 +144,8 @@ function applyProposal(config){
 }
 function doProposal(){const p=E.propose(alt().devices,alt().reserve);if(!p.ok){toast(p.errors.join(' '));return;}applyProposal(p);}
 
-function brandMatch(d){return state.brand==='Generico'?null:M.normalized(d,state.brand,alt().assignments?.[d.id]);}
-function brandSummary(){if(state.brand==='Generico')return 'Diseño totalmente genérico. Puedes elegir fabricante después.';const n=alt().devices.filter(brandMatch).length;return `${n} de ${alt().devices.length} preselecciones por parámetros parciales en el minicátalogo ${state.brand}. Los demás aparatos siguen genéricos.`;}
+function brandMatch(d){return state.brand==='Generico'?null:(window.PanelCommercialPlacement.resolve(d,alt(),state.brand)||M.normalized(d,state.brand,alt().assignments?.[d.id]));}
+function brandSummary(){if(state.brand==='Generico')return 'Diseño totalmente genérico. Puedes elegir fabricante después.';const n=alt().devices.filter(brandMatch).length;return `${n} de ${alt().devices.length} referencias con anchura comercial aplicada en ${state.brand}. Los demás aparatos siguen genéricos.`;}
 function brandAccent(brand){return ({Schneider:'#3ca04b',Legrand:'#e13b3f',Hager:'#f2a327'})[brand]||'#7f93aa';}
 function shortBrand(brand){return ({Schneider:'SCH',Legrand:'LEG',Hager:'HAG'})[brand]||brand?.slice(0,3)?.toUpperCase()||'GEN';}
 function deviceAccent(d){return brandMatch(d)?brandAccent(state.brand):'#b7c8dc';}
@@ -521,7 +521,7 @@ function brandDocumentaryDetail(d,c){
  if(!c||!c.eligible)return '<div class="brand-preview-empty">Ficha no elegible con los requisitos actuales. Revisa polos, corriente, curva, poder de corte y vigencia.</div>';
  const r=c.record,att=r.atributos||{},est=E.estimateModules(d);
  const dims=Number(att.modulos)>0&&Number.isInteger(Number(att.modulos))?
-   'Ficha declara '+att.modulos+' M · todavía NO aplicados al montaje':
+   'Anchura comercial pendiente de aplicar: '+att.ancho_mm+' mm / '+att.modulos+' M según ficha':
    'Anchura comercial pendiente de validar · no se recalcula la envolvente';
  const tax=r.pvp_sin_iva_eur!=null?'PVP sin IVA documentado: '+r.pvp_sin_iva_eur+' EUR':
    r.precio_publicado_eur!=null?'Importe web '+r.precio_publicado_eur+' EUR · IVA sin confirmar':'Precio no documentado';
@@ -531,6 +531,14 @@ function brandDocumentaryDetail(d,c){
    +'<div class="geometry-compare"><div><small>Dispositivo genérico</small><strong>≈ '+est+' M</strong><span>Conservado en diseño y unifilar</span></div>'
    +'<div><small>Referencia comercial</small><strong>Sin anchura aplicada</strong><span>Sin afirmar montaje compatible ni espacio suficiente</span></div></div>'
    +'<p class="pending-check">'+escape(c.pending.join(' · ')||'Comprobar condiciones técnicas y geometría de instalación')+'</p>'
+   +(window.PanelCommercialPlacement.canApply(d,r.fabricante,r.referencia)?
+      '<label class="form-field" style="display:block;padding:8px 0" data-commercial-geometry-control="'+escape(d.id)+'">'
+      +'<input type="checkbox" data-apply-geometry="'+escape(d.id)+'" value="'+escape(r.referencia)+'" '
+      +(alt().physicalSelections?.[d.id]?.fabricante===r.fabricante&&alt().physicalSelections?.[d.id]?.referencia===r.referencia?'checked':'')+'> '
+      +'<strong>Aplicar SOLO ocupación DIN verificada: '+escape(att.ancho_mm)+' mm / '+escape(att.modulos)+' M</strong></label>'
+      +'<p class="tiny-hint">Confirmación manual: no valida capacidad de corte en la instalación, bornes, coordinación ni montaje. '
+      +'Ficha dimensional <a class="small-link" href="'+escape(r.geometria_documental.fuente)+'" target="_blank" rel="noopener noreferrer">origen y fecha ↗</a>.</p>'
+      :'<p class="tiny-hint">Geometría física no aplicable hasta verificar la ficha individual.</p>')
    +'<p class="small-text">'+escape(tax)+'</p>'
    +(r.incidencia_fuente?'<p class="pending-check">'+escape(r.incidencia_fuente.nota)+'</p>':'')
    +'<a class="small-link" href="'+escape(r.url_oficial)+'" target="_blank" rel="noopener noreferrer">Ficha del fabricante ↗</a></div>';
@@ -595,7 +603,7 @@ $('openBrandReview').addEventListener('click',openBrandReview);
 $('closeBrandReview').addEventListener('click',closeBrandReview);
 $('brandReview').addEventListener('click',e=>{if(e.target===$('brandReview'))closeBrandReview();});
 $('applyBrandReview').addEventListener('click',()=>{
- const picks={},documents={},original=alt().apparatusCandidates||{};
+ const picks={},documents={},geometry={};
  // Validar TODO antes de mutar cualquier estado.
  for(const sel of document.querySelectorAll('[data-brand-pick]')){
    const d=alt().devices.find(x=>x.id===sel.dataset.brandPick);
@@ -605,21 +613,35 @@ $('applyBrandReview').addEventListener('click',()=>{
      const ref=sel.value.slice(4),review=brandDocumentary(d,ref);
      if(!review?.eligible){toast('La ficha ya no satisface los requisitos. Vuelve a comparar.');return;}
      documents[d.id]=ref;
+     const checkbox=sel.closest('tr')?.querySelector('[data-apply-geometry="'+d.id+'"]');
+     if(checkbox?.checked){
+       if(checkbox.value!==ref||!window.PanelCommercialPlacement.canApply(d,state.brand,ref)){
+         toast('No se puede aplicar geometría de esta referencia.');return;
+       }
+       geometry[d.id]=ref;
+     }
    } else {
      if(!M.find(d,state.brand,sel.value)){toast('Candidato del minicátalogo no válido. Revisa la selección.');return;}
      picks[d.id]=sel.value;
    }
  }
  const prevAssignments=alt().assignments||{};
- const changedWidth=JSON.stringify(picks)!==JSON.stringify(prevAssignments);
+ const prevGeometry=alt().physicalSelections||{};
+ const nextGeometry=Object.fromEntries(Object.entries(geometry).map(([id,ref])=>[id,{
+   fabricante:state.brand,referencia:ref,estado:window.PanelCommercialPlacement.STATUS,
+   fuente:window.PanelCommercialPlacement.SOURCE}]));
+ const changedWidth=JSON.stringify(picks)!==JSON.stringify(prevAssignments)||
+   JSON.stringify(nextGeometry)!==JSON.stringify(prevGeometry);
  saveAction(()=>{
    const a=alt();
    a.assignments=picks;
+   a.physicalSelections={};
    a.apparatusCandidates={...(a.apparatusCandidates||{})};
    for(const d of a.devices){
      if(documents[d.id]){
        // Misma ruta de validación/persistencia que el comparador del inspector.
        window.PanelApparatusCandidates.choose(a,d.id,state.brand,documents[d.id]);
+       if(geometry[d.id])window.PanelCommercialPlacement.set(a,d.id,state.brand,geometry[d.id]);
      }else if(picks[d.id]||a.apparatusCandidates[d.id]?.fabricante===state.brand){
        delete a.apparatusCandidates[d.id];
      }
@@ -628,7 +650,7 @@ $('applyBrandReview').addEventListener('click',()=>{
  },{electrical:false});
  closeBrandReview();
  const n=Object.keys(documents).length,k=Object.keys(picks).length;
- toast(n+' candidata(s) documentales y '+k+' preselección(es) dimensionales. El genérico se conserva.');
+ toast(n+' candidata(s) documentales, '+Object.keys(geometry).length+' geometría(s) confirmadas y '+k+' preselección(es) dimensionales. El genérico se conserva.');
 });
 $('autoPickBrandReview').addEventListener('click',autoPickBrandReview);
 $('brandSelect').addEventListener('change',e=>{saveAction(()=>{state.brand=e.target.value;syncWidthsAcrossAlternatives();},{electrical:false});toast('Marca elegida. Los aparatos siguen genéricos hasta confirmar candidatos.');if(state.brand!=='Generico')openBrandReview();});
@@ -661,10 +683,20 @@ document.addEventListener('click',e=>{
  const apparPick=e.target.closest('[data-apparatus-pick]');
  if(apparPick){const id=apparPick.dataset.apparatusPick,brand=apparPick.dataset.apparatusPickBrand,ref=apparPick.dataset.apparatusRef;
   const hypothetical=clone(alt());if(!window.PanelApparatusCandidates.choose(hypothetical,id,brand,ref))return toast('No es candidata admisible con los datos críticos actuales.');
-  saveAction(()=>window.PanelApparatusCandidates.choose(alt(),id,brand,ref),{electrical:false});
+  saveAction(()=>{
+   const a=alt(),old=a.physicalSelections?.[id];
+   if(old&&(old.fabricante!==brand||old.referencia!==ref)){
+     window.PanelCommercialPlacement.clear(a,id);a.layoutDirty=true;
+   }
+   window.PanelApparatusCandidates.choose(a,id,brand,ref);
+  },{electrical:false});
   toast('Referencia guardada SOLO como candidata documental. El aparato y su posición siguen siendo genéricos.');return;}
  const apparClear=e.target.closest('[data-apparatus-clear]');
- if(apparClear){const id=apparClear.dataset.apparatusClear;saveAction(()=>window.PanelApparatusCandidates.clear(alt(),id),{electrical:false});toast('Candidata documental eliminada.');return;}
+ if(apparClear){const id=apparClear.dataset.apparatusClear;
+  saveAction(()=>{const a=alt();if(a.physicalSelections?.[id])a.layoutDirty=true;
+   window.PanelCommercialPlacement.clear(a,id);window.PanelApparatusCandidates.clear(a,id);
+  },{electrical:false});
+  toast('Candidata y eventual confirmación dimensional retiradas.');return;}
  const pick=e.target.closest('[data-enclosure-pick]');
  if(pick){const brand=pick.dataset.enclosurePickBrand,ref=pick.dataset.enclosurePick;const candidate=clone(alt());if(!window.PanelEnclosureCandidates.choose(candidate,brand,ref))return toast('Esa envolvente no figura entre las candidatas por capacidad modular.');saveAction(()=>window.PanelEnclosureCandidates.choose(alt(),brand,ref),{electrical:false});toast('Referencia guardada como CANDIDATA. No se ha validado el montaje ni alterado la geometría.');return;}
  const clearEnclosure=e.target.closest('[data-enclosure-clear]');
@@ -689,7 +721,7 @@ $('insertModal').addEventListener('click',e=>{if(e.target===$('insertModal'))clo
 document.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.matches('[data-insert-branch]')){e.preventDefault();openInsert(null,e.target.dataset.insertBranch,'branch');}else if((e.key==='Enter'||e.key===' ')&&e.target.matches('[data-insert-child]')){e.preventDefault();openInsert(e.target.dataset.insertChild,e.target.dataset.insertParent||null);}else if((e.key==='Enter'||e.key===' ')&&e.target.matches('.circuit-terminal')){e.preventDefault();selectedCircuit=e.target.dataset.circuitId;selected=currentCircuit()?.deviceId||selected;render();}else if((e.key==='Enter'||e.key===' ')&&e.target.matches('.diagram-node')){e.preventDefault();selected=e.target.dataset.device;selectedCircuit=null;selectedBar=null;render();}});
 $('exportBtn').addEventListener('click',()=>{const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='PanelBuilder_'+state.active+'_v11.json';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),500);});
 $('importBtn').addEventListener('click',()=>$('fileInput').click());
-$('fileInput').addEventListener('change',async e=>{const file=e.target.files?.[0];if(!file)return;try{const txt=await file.text();if(txt.length>2_000_000)throw Error('Archivo demasiado grande.');const p=JSON.parse(txt);if(!validProject(p))throw Error('Proyecto no reconocido o incompatible con v0.11.');saveAction(()=>{state=p;state.version=11;Object.values(state.alternatives).forEach(a=>{a.circuits=Array.isArray(a.circuits)?a.circuits:[];a.busbars=Array.isArray(a.busbars)?a.busbars:[];a.auxiliaryZones=a.auxiliaryZones||{bars:{},circuits:{}};a.assignments=([6,8,9,10,11].includes(p.version)?a.assignments||{}:{});a.devices=E.recalcWidths(a.devices,'Generico');a.layoutDirty=true;});selected=alt().devices[0]?.id||null;selectedCircuit=null;selectedBar=null;camera.initialized=false;},{electrical:false});toast('Proyecto importado y anchuras revisadas. Recalcula la distribución.');}catch(err){toast(err.message);}e.target.value='';});
+$('fileInput').addEventListener('change',async e=>{const file=e.target.files?.[0];if(!file)return;try{const txt=await file.text();if(txt.length>2_000_000)throw Error('Archivo demasiado grande.');const p=JSON.parse(txt);if(!validProject(p))throw Error('Proyecto no reconocido o incompatible con v0.11.');saveAction(()=>{state=p;state.version=11;Object.values(state.alternatives).forEach(a=>{a.circuits=Array.isArray(a.circuits)?a.circuits:[];a.busbars=Array.isArray(a.busbars)?a.busbars:[];a.auxiliaryZones=a.auxiliaryZones||{bars:{},circuits:{}};a.assignments=([6,8,9,10,11].includes(p.version)?a.assignments||{}:{});a.devices=a.devices.map(d=>{const rec=state.brand==='Generico'?null:(window.PanelCommercialPlacement.resolve(d,a,state.brand)||M.normalized(d,state.brand,a.assignments?.[d.id]));return {...d,modules:rec?rec.modules:E.estimateModules(d),moduleSource:rec?'catalog':'estimate',matchedRef:rec?.ref||null};});a.layoutDirty=true;});selected=alt().devices[0]?.id||null;selectedCircuit=null;selectedBar=null;camera.initialized=false;},{electrical:false});toast('Proyecto importado y anchuras revisadas. Recalcula la distribución.');}catch(err){toast(err.message);}e.target.value='';});
 let physicalDragId=null;
 document.addEventListener('dragstart',e=>{const btn=e.target.closest('[data-physical-device]');if(!btn)return;physicalDragId=btn.dataset.physicalDevice;try{e.dataTransfer.setData('text/plain',physicalDragId);e.dataTransfer.effectAllowed='move';}catch(err){};selected=physicalDragId;});
 document.addEventListener('dragover',e=>{if(!physicalDragId)return;const t=e.target.closest('[data-slot],[data-physical-device]');if(!t)return;e.preventDefault();});
