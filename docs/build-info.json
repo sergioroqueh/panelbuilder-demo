@@ -1,7 +1,7 @@
 {
-  "sha": "456eef1e75353da78f798b2aaededf2e800af17c",
+  "sha": "69e3c644fe584b99988a50eeb62db0804a4df00f",
   "branch": "feat/v0.11-unifilar-tecnico",
   "publication": "panelbuilder-demo",
-  "note": "Ronda 15: Schneider Acti9 iOF/iSD y Legrand DX3/TX3/RX3, prohibiciones y obsolescencia por SKU. No asignación/compras automáticas.",
+  "note": "Ronda 16: + paridad con biblioteca, SPD derivación lateral, PE pendiente en guía. No valida montaje.",
   "deployedAt": null
 }

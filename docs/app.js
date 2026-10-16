@@ -261,34 +261,62 @@ function renderSchematic(){const ds=alt().devices, errors=E.graphCheck(ds);
  <p class="tiny-hint">Líneas punteadas: relación documental; no rutas de conductores verificadas.</p>
  </section><div class="node-caption"><strong>Cómo editar:</strong> selecciona un aparato para modificarlo o pulsa <strong>＋</strong> sobre cualquier línea para intercalar uno nuevo. El esquema también se exporta en vertical. Vista técnica ilustrativa, sin conductores N/PE ni simbología IEC validada.</div>${errors.length?`<p class="error-text">${errors.map(escape).join(' · ')}</p>`:''}</div></div>`;
 }
+function insertSpdHost(i){
+ // El SPD se deriva del origen de la arista. En la entrada raíz, derivar aguas abajo de la raíz.
+ return i.mode==='branch'?i.parentId:(i.parentId||i.childId);
+}
+function spdCanBranchFrom(id){
+ const d=alt().devices.find(x=>x.id===id);
+ return !!d&&d.kind!=='SPD'&&!circuitsFor().some(c=>c.deviceId===id);
+}
 function openInsert(childId,parentId,mode='edge'){
  const child=alt().devices.find(d=>d.id===childId);
  if(mode==='edge'){
   if(!child || (child.parent||null)!==(parentId||null)){toast('La conexión ha cambiado.');return;}
   insertion={mode:'edge',childId,parentId:parentId||null};
   const parent=alt().devices.find(d=>d.id===parentId);
-  $('insertDescription').innerHTML=`Se añadirá un elemento <b>${parent?`entre ${escape(parent.label)} y ${escape(child.label)}`:`entre la alimentación y ${escape(child.label)}`}</b>. El resto de derivaciones conservarán sus conexiones.`;
+  $('insertDescription').innerHTML=`Protecciones en serie <b>${parent?`entre ${escape(parent.label)} y ${escape(child.label)}`:`antes de ${escape(child.label)}`}</b>. Excepción SPD: se creará <b>una derivación desde ${parent?escape(parent.label)+' (paralela a '+escape(child.label)+')':escape(child.label)+' (aguas abajo)'}</b>, conservando la conexión actual.`;
  } else {
   const parent=alt().devices.find(d=>d.id===parentId);
   if(!parent) return toast('El origen de la derivación ya no existe.');
   const children=alt().devices.filter(x=>x.parent===parentId);
   if(children.length<2) return toast('Este punto no tiene una derivación múltiple.');
   insertion={mode:'branch',parentId};
-  $('insertDescription').innerHTML=`Se añadirá un elemento <b>entre ${escape(parent.label)} y el punto de derivación múltiple</b>. Las ${children.length} ramas actuales quedarán aguas abajo del nuevo elemento.`;
+  $('insertDescription').innerHTML=`Protecciones en serie entre <b>${escape(parent.label)}</b> y sus <b>${children.length} ramas</b>. Excepción SPD: se añadirá como <b>otra derivación desde ${escape(parent.label)}</b>, sin alterar las ramas actuales.`;
  }
- $('insertChoices').innerHTML=library.filter(item=>typeOf(item.kind)!=='SPD').map(item=>`<button type="button" class="insert-choice" data-insert-kind="${escape(item.kind)}"><span class="library-icon">${escape(item.symbol)}</span><span><strong>${escape(item.label)}</strong><small>${escape(item.poles)} · ancho estimado automáticamente</small></span><span class="insert-choice-arrow">→</span></button>`).join('');
+ const host=alt().devices.find(d=>d.id===insertSpdHost(insertion));
+ const spdEnabled=host&&spdCanBranchFrom(host.id);
+ $('insertChoices').innerHTML=library.map(item=>{
+  const spd=typeOf(item.kind)==='SPD';
+  const hint=spd?(spdEnabled
+   ?'Derivación desde '+escape(host.label)+' · NO en serie · PE y respaldo pendientes'
+   :'No disponible: origen sin derivación válida o con salida terminal')
+   :escape(item.poles)+' · ancho estimado automáticamente';
+  return `<button type="button" class="insert-choice" data-insert-kind="${escape(item.kind)}"${spd&&!spdEnabled?' disabled aria-disabled="true"':''}><span class="library-icon">${escape(item.symbol)}</span><span><strong>${escape(item.label)}</strong><small>${hint}</small></span><span class="insert-choice-arrow">${spd?'↳':'→'}</span></button>`;
+ }).join('');
  $('insertModal').classList.add('open');$('insertModal').setAttribute('aria-hidden','false');
  $('closeInsert').focus();
 }
 function closeInsert(){insertion=null;$('insertModal').classList.remove('open');$('insertModal').setAttribute('aria-hidden','true');}
 function performInsert(kind){
  if(!insertion)return;
- if(typeOf(kind)==='SPD')return toast('El SPD se añade como derivación desde un equipo aguas arriba, no intercalado en serie.');
  const base=library.find(d=>d.kind===kind);if(!base)return;
+ const isSPD=typeOf(kind)==='SPD';
+ if(isSPD&&!spdCanBranchFrom(insertSpdHost(insertion)))return toast('No se puede derivar SPD: origen inválido o con salida terminal.');
+ if(insertion.mode==='edge'){
+  const child=alt().devices.find(d=>d.id===insertion.childId);
+  if(!child||(child.parent||null)!==(insertion.parentId||null))return toast('La conexión ha cambiado. Abre de nuevo el selector.');
+ }else{
+  const children=alt().devices.filter(x=>x.parent===insertion.parentId);
+  if(!alt().devices.some(x=>x.id===insertion.parentId)||children.length<2)return toast('Las derivaciones han cambiado. Abre de nuevo el selector.');
+ }
  try{saveAction(()=>{
   const id='d'+state.counter++;const normalized=typeOf(base.kind);
   const d={...clone(base),id,kind:normalized,label:suggestLabel(normalized),row:null,pos:null};delete d.symbol;
-  if(insertion.mode==='branch'){
+  if(isSPD){
+    // Añadir rama no modifica el padre del hijo ni la topología de las otras derivaciones.
+    alt().devices.push({...d,parent:insertSpdHost(insertion)});
+   }else if(insertion.mode==='branch'){
     const pid=insertion.parentId;
     const ids=new Set(alt().devices.filter(x=>x.parent===pid).map(x=>x.id));
     alt().devices=alt().devices.map(x=>ids.has(x.id)?{...x,parent:id}:x);
@@ -298,7 +326,7 @@ function performInsert(kind){
     alt().devices=E.insertBetween(alt().devices,parentId,childId,d);
   }
   selected=id;
- });closeInsert();toast('Protección insertada. Conexión actualizada; vuelve a proponer la distribución física.');}
+ });closeInsert();toast(isSPD?'SPD añadido como derivación. Configura datos SPD, PE y respaldo; recalcula el cuadro físico.':'Protección insertada en serie. Conexión actualizada; vuelve a proponer la distribución física.');}
  catch(err){toast(err.message);}
 }
 function renderCabinet(){const a=alt(),has=!!a.rows;const dinHtml=window.PanelDINReflow.render(a,dinProposalOpen,escape,d=>state.brand==='Generico'?null:window.PanelCommercialPlacement.resolve(d,a,state.brand));const auxiliary=window.PanelPhysicalAux.physical(a,escape);const occupied=a.devices.reduce((s,d)=>s+Number(d.modules),0);const dimensionalIssues=window.PanelDINReflow.mmReport(a,d=>state.brand==='Generico'?null:window.PanelCommercialPlacement.resolve(d,a,state.brand)).issues.length+window.PanelMountClearance.report(a).issues.length+window.PanelDINAssemblies.report(a,state.brand).issues.length;const unplaced=a.devices.filter(d=>d.row===null||d.pos===null);
@@ -670,7 +698,7 @@ document.addEventListener('click',e=>{
   const id=flowDevice.dataset.flowDevice;
   if(!alt().devices.some(d=>d.id===id))return;
   selected=id;selectedBar=null;selectedCircuit=null;view='unifilar';canvasFocus=false;inspectorDrawer=false;render();
-  const input=document.querySelector('[data-edit="'+flowDevice.dataset.flowField+'"]');
+  const input=flowDevice.dataset.flowField==='spdPeBusbarId'?$('spd_pe_bar'):document.querySelector('[data-edit="'+flowDevice.dataset.flowField+'"]');
   if(input)requestAnimationFrame(()=>input.focus());
   return;
  }

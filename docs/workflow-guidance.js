@@ -22,6 +22,7 @@ function missingFor(d){
   need(gt0(d.spdUcV),'spdUcV','Uc (V)');
   need(gt0(d.spdInKa),'spdInKa','In mínimo (kA)');
   need(gt0(d.spdImaxKa),'spdImaxKa','Imax mínimo (kA)');
+  need(defined(d.spdPeBusbarId),'spdPeBusbarId','Barra PE de destino anotada (sin validar cableado)');
  }else if(d.kind==='CONTACT'){
   need(gt0(d.amp),'amp','Intensidad según categoría de empleo');
   need(gt0(d.contactCoilV),'contactCoilV','Bobina (V)');
@@ -59,7 +60,7 @@ function render(a,brand,esc){
  +'<div class="workflow-guidance-steps">'+data.stages.map(step=>
   '<button type="button" class="workflow-guidance-step" data-flow-view="'+step.view+'"><span class="workflow-guidance-index">'+step.number+'</span><span><strong>'+esc(step.title)+'</strong><small>'+esc(step.detail)+'</small></span></button>'
  ).join('')+'</div>'
- +(data.missing.length?'<details class="workflow-missing" data-flow-missing="true"><summary>¿Qué información me falta? · '+data.missing.length+' dato(s)</summary><p>No deducimos valores eléctricos por el nombre del circuito. Consulta proyecto, memoria, ficha y cálculos de un profesional competente.</p><div class="workflow-missing-items">'+data.missing.slice(0,7).map(x=>'<button type="button" data-flow-device="'+esc(x.id)+'" data-flow-field="'+esc(x.field)+'">'+esc(x.label)+' · '+esc(x.name)+' → Ir a propiedades</button>').join('')+(data.missing.length>7?'<small>+ '+(data.missing.length-7)+' campos adicionales pendientes</small>':'')+'</div></details>':
+ +(data.missing.length?'<details class="workflow-missing" data-flow-missing="true"><summary>¿Qué información me falta? · '+data.missing.length+' dato(s)</summary><p>No deducimos valores eléctricos por el nombre del circuito. Consulta proyecto, memoria, ficha y cálculos de un profesional competente.</p><div class="workflow-missing-items">'+data.missing.slice(0,12).map(x=>'<button type="button" data-flow-device="'+esc(x.id)+'" data-flow-field="'+esc(x.field)+'">'+esc(x.label)+' · '+esc(x.name)+' → Ir a propiedades</button>').join('')+(data.missing.length>12?'<small>+ '+(data.missing.length-12)+' campos adicionales pendientes</small>':'')+'</div></details>':
  '<p class="workflow-ready-hint">No faltan campos básicos del checklist. Aún son necesarias las comprobaciones eléctricas, comerciales y normativas del conjunto.</p>')
  +'<div class="workflow-guidance-export"><span>Descargas disponibles:</span><button type="button" class="button small" data-flow-export="svg" '+(!data.deviceCount?'disabled':'')+'>↓ Unifilar SVG</button><button type="button" class="button small" data-flow-export="csv" '+(!data.deviceCount?'disabled':'')+'>↓ Materiales CSV</button><button type="button" class="button small" data-flow-export="json">↓ Proyecto JSON</button></div>';
 }
