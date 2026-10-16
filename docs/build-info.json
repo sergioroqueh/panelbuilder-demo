@@ -1,7 +1,7 @@
 {
-  "sha": "c4e55dbb40a455c98d60906e1bd655caccec0968",
+  "sha": "578ae980ca36a2d32869e257e93e8e6f95930074",
   "branch": "feat/v0.11-unifilar-tecnico",
   "publication": "panelbuilder-demo",
-  "note": "R17: intercalación asistida DIN por DnD; preview con confirmación, fijaciones/reservas, compactación opcional. 62/62 pruebas.",
+  "note": "R18: arrastrar aplica sin confirmación y cascada automáticamente a carriles existentes, sin cambiar unifilar, fijaciones ni capacidad.",
   "deployedAt": null
 }

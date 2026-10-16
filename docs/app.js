@@ -31,7 +31,7 @@ let camera={x:0,y:0,zoom:.85,initialized:false,alternative:'',width:0,height:0};
 let canvasFocus=false, inspectorDrawer=false;
 let diagramStyle='technical';
 let physicalDetail='basic';
-let dinProposalOpen=false,dinPreviewPlan=null,dinInsertPreview=null;
+let dinProposalOpen=false,dinPreviewPlan=null;
 try{physicalDetail=localStorage.getItem('PanelBuilder_v11_physicalDetail')==='advanced'?'advanced':'basic';}catch(err){}
 try{diagramStyle=localStorage.getItem('PanelBuilder_v11_diagramStyle_v3')==='blocks'?'blocks':'technical';}catch(err){}
 try {const raw=localStorage.getItem(key)||localStorage.getItem('PanelBuilder_v10_workbench')||localStorage.getItem('PanelBuilder_v09_workbench')||localStorage.getItem('PanelBuilder_v06_workbench')||localStorage.getItem('PanelBuilder_v05_workbench')||localStorage.getItem('PanelBuilder_v04_workbench')||localStorage.getItem('PanelBuilder_v03_workbench');
@@ -116,7 +116,7 @@ function persist(){try{localStorage.setItem(key,JSON.stringify(state))}catch(e){
 function syncWidths(){alt().devices=alt().devices.map(d=>{
  const m=brandMatch(d); return {...d,modules:m?m.modules:E.estimateModules(d),moduleSource:m?'catalog':'estimate',matchedRef:m?m.ref:null};});}
 function syncWidthsAcrossAlternatives(){for(const a of Object.values(state.alternatives)){a.assignments={};a.physicalSelections={};window.PanelMountClearance.clearProfiles(a);a.devices=E.recalcWidths(a.devices,'Generico');a.layoutDirty=true;}}
-function saveAction(fn,{electrical=true}={}){dinProposalOpen=false;dinPreviewPlan=null;dinInsertPreview=null;undo.push(clone(state));if(undo.length>50)undo.shift();redo=[];fn();if(electrical){alt().assignments={};alt().physicalSelections={};window.PanelMountClearance.clearProfiles(alt());}syncWidths();if(electrical){alt().layoutDirty=true;}persist();render();}
+function saveAction(fn,{electrical=true}={}){dinProposalOpen=false;dinPreviewPlan=null;undo.push(clone(state));if(undo.length>50)undo.shift();redo=[];fn();if(electrical){alt().assignments={};alt().physicalSelections={};window.PanelMountClearance.clearProfiles(alt());}syncWidths();if(electrical){alt().layoutDirty=true;}persist();render();}
 function toast(msg){const el=$('toast');el.textContent=msg;el.classList.add('visible');clearTimeout(noticeTimer);noticeTimer=setTimeout(()=>el.classList.remove('visible'),3100);}
 function format(d){let s=d.poles||'';if(d.kind==='MCB')s+=` · ${d.amp||'?'} A · ${d.curve||'?'}${d.amp?'':''}`;
  else if(d.kind==='RCD')s+=` · ${d.amp||'?'} A · ${d.sensitivity||'?'} mA · ${d.rcdType||'?'} `;
@@ -334,7 +334,7 @@ function renderCabinet(){const a=alt(),has=!!a.rows;const dinHtml=window.PanelDI
  a.devices.filter(d=>d.row===row&&d.pos!==null).forEach(d=>{const fixed=window.PanelDINReflow.pinned(a,d.id),match=brandMatch(d),color=deviceAccent(d),chip=match?`<span class="device-chip" style="background:${color}">${shortBrand(state.brand)}</span>`:'',kind=d.kind==='MCB1'?'MCB':d.kind;cell+=`<button type="button" draggable="${fixed?'false':'true'}" class="device ${selected===d.id?'selected':''}" style="grid-column:${d.pos+1}/span ${d.modules};--device-accent:${color}" data-device="${escape(d.id)}" data-physical-device="${escape(d.id)}" title="${escape(d.label)} · ${d.modules} módulos"><div class="device-head"><strong>${escape(cut(d.label,9))}</strong>${chip}${fixed?'<span title="Posición fijada">📌</span>':''}</div>${cabinetFigure(kind)}<small>${escape(kind)} · ${d.moduleSource==='catalog'?`${match.widthMm} mm · ${d.modules}M`:`≈ ${d.modules}M`}</small></button>`});
  blocks+=`<div class="rail-block"><div class="rail-heading"><span>Carril DIN ${row+1}</span><span>${a.slots} módulos</span></div><div class="rail-grid" data-din-rail="${row}" style="--cols:${a.slots}">${cell}</div></div>`;}}
  return `<div class="work-card"><div class="card-header"><div><strong>② Propuesta de distribución física</strong><small>${has?`${a.rows} fila(s) × ${a.slots} M · ${occupied} M de aparatos`: 'Sin envolvente asignada todavía'}</small></div><span class="badge ${a.layoutDirty||dimensionalIssues?'amber':'green'}">${!has?'Pendiente':a.layoutDirty?'Recalcular':dimensionalIssues?'Revisar cotas':'Distribuida'}</span></div><div class="physical-shortcut-row"><button type="button" class="button small" data-view="unifilar">← Volver al unifilar</button><div class="physical-detail-toggle" role="group" aria-label="Nivel de detalle físico"><button type="button" class="button small ${physicalDetail==='basic'?'primary':''}" data-action="physicalBasic" aria-pressed="${physicalDetail==='basic'}">Diseño básico</button><button type="button" class="button small ${physicalDetail==='advanced'?'primary':''}" data-action="physicalAdvanced" aria-pressed="${physicalDetail==='advanced'}">Detalle constructivo</button></div></div><div class="card-body">${!has?'<div class="empty-view"><strong>Sin propuesta física</strong><p>Pulsa «Proponer envolvente y distribución» cuando hayas introducido los componentes genéricos.</p></div>':`<div class="cabinet-shell"><div class="cabinet-core">${physicalDetail==='advanced'?auxiliary.header:''}${blocks}${physicalDetail==='advanced'?auxiliary.side:''}${physicalDetail==='advanced'?auxiliary.bottom:''}</div><div class="cabinet-bottom">${a.enclosureSelection?'DISTRIBUCIÓN GENÉRICA · ENVOLVENTE COMERCIAL SIN VALIDAR':'ENVOLVENTE GENÉRICA · CAPACIDAD NOMINAL'}</div></div>`}
- ${physicalDetail==='advanced'?`<div data-physical-advanced="true">${window.PanelEnclosureGeometry.preview(a,escape,d=>state.brand==='Generico'?null:window.PanelCommercialPlacement.resolve(d,a,state.brand))}${auxiliary.panel}${window.PanelEnclosureGeometry.form(a,escape)}${window.PanelConstruction.form(a,escape)}${window.PanelMountClearance.railForm(a,escape)}${window.PanelPhysicalAccessories.render(a,state.brand,escape)}${window.PanelDINAssemblies.render(a,state.brand,escape)}${window.PanelManufacturerResearch.render()}${window.PanelManufacturerHosts.render()}${window.PanelManufacturerR15.render()}</div>`:`<div class="physical-basic-hint" data-physical-basic="true"><strong>Montaje modular listo para organizar.</strong><span>El estudio de canaletas, carriles y dimensiones se conserva en «Detalle constructivo». Cambiar de modo no modifica tus datos.</span></div>`}${window.PanelDINInsert.render(dinInsertPreview,escape)}${dinHtml}${window.PanelMountClearance.summary(a,escape)}${window.PanelEnclosureCandidates.render(a,escape)}${has&&unplaced.length?`<div class="unplaced-card"><strong>${unplaced.length} aparato(s) sin colocar:</strong> ${unplaced.map(d=>escape(d.label)).join(", ")}. Pulsa «Proponer envolvente y distribución» para actualizar el montaje.</div>`:""}<div class="placeholder-tape">La distribución DIN es una <b>estimación modular</b> calculada con anchuras provisionales; la representación auxiliar de barras y bornas NO determina huecos ni dimensiones interiores reales. Faltan canaletas, soportes, cableado, térmica y accesorios. La comprobación final exigirá referencias comerciales y una envolvente verificada.</div></div></div>`;
+ ${physicalDetail==='advanced'?`<div data-physical-advanced="true">${window.PanelEnclosureGeometry.preview(a,escape,d=>state.brand==='Generico'?null:window.PanelCommercialPlacement.resolve(d,a,state.brand))}${auxiliary.panel}${window.PanelEnclosureGeometry.form(a,escape)}${window.PanelConstruction.form(a,escape)}${window.PanelMountClearance.railForm(a,escape)}${window.PanelPhysicalAccessories.render(a,state.brand,escape)}${window.PanelDINAssemblies.render(a,state.brand,escape)}${window.PanelManufacturerResearch.render()}${window.PanelManufacturerHosts.render()}${window.PanelManufacturerR15.render()}</div>`:`<div class="physical-basic-hint" data-physical-basic="true"><strong>Montaje modular listo para organizar.</strong><span>El estudio de canaletas, carriles y dimensiones se conserva en «Detalle constructivo». Cambiar de modo no modifica tus datos.</span></div>`}${dinHtml}${window.PanelMountClearance.summary(a,escape)}${window.PanelEnclosureCandidates.render(a,escape)}${has&&unplaced.length?`<div class="unplaced-card"><strong>${unplaced.length} aparato(s) sin colocar:</strong> ${unplaced.map(d=>escape(d.label)).join(", ")}. Pulsa «Proponer envolvente y distribución» para actualizar el montaje.</div>`:""}<div class="placeholder-tape">La distribución DIN es una <b>estimación modular</b> calculada con anchuras provisionales; la representación auxiliar de barras y bornas NO determina huecos ni dimensiones interiores reales. Faltan canaletas, soportes, cableado, térmica y accesorios. La comprobación final exigirá referencias comerciales y una envolvente verificada.</div></div></div>`;
 }
 function renderMaterials(){
  const auxStats=window.PanelPhysicalAux.stats(alt());
@@ -690,24 +690,9 @@ $('reserveInput').addEventListener('change',e=>saveAction(()=>{alt().reserve=Num
 $('alternativeSelect').addEventListener('change',e=>{dinProposalOpen=false;dinPreviewPlan=null;state.active=e.target.value;selected=alt().devices[0]?.id||null;selectedCircuit=null;selectedBar=null;persist();render();});
 $('duplicateBtn').addEventListener('click',()=>{const suffix=Object.keys(state.alternatives).length+1;let keyName='B';while(state.alternatives[keyName])keyName=String.fromCharCode(keyName.charCodeAt(0)+1);saveAction(()=>{state.alternatives[keyName]=clone(alt());state.alternatives[keyName].name='Alternativa '+keyName;state.active=keyName;},{electrical:false});toast('Alternativa independiente creada.');});
 $('proposeBtn').addEventListener('click',doProposal);
-$('undoBtn').addEventListener('click',()=>{dinProposalOpen=false;dinPreviewPlan=null;dinInsertPreview=null;if(!undo.length)return toast('No hay cambios que deshacer.');redo.push(clone(state));state=undo.pop();persist();render();});
-$('redoBtn').addEventListener('click',()=>{dinProposalOpen=false;dinPreviewPlan=null;dinInsertPreview=null;if(!redo.length)return toast('No hay cambios que rehacer.');undo.push(clone(state));state=redo.pop();persist();render();});
+$('undoBtn').addEventListener('click',()=>{dinProposalOpen=false;dinPreviewPlan=null;if(!undo.length)return toast('No hay cambios que deshacer.');redo.push(clone(state));state=undo.pop();persist();render();});
+$('redoBtn').addEventListener('click',()=>{dinProposalOpen=false;dinPreviewPlan=null;if(!redo.length)return toast('No hay cambios que rehacer.');undo.push(clone(state));state=redo.pop();persist();render();});
 document.addEventListener('click',e=>{
- const insertAction=e.target.closest('[data-din-insert-action]');
- if(insertAction){
-  const action=insertAction.dataset.dinInsertAction;
-  if(action==='cancel'){dinInsertPreview=null;render();toast('Inserción DIN cancelada. Se conservan las posiciones.');return;}
-  if(action==='confirm'){
-   const p=dinInsertPreview;
-   if(!p?.ok||!window.PanelDINInsert.apply(clone(alt()),p)){
-    dinInsertPreview=null;render();toast('La propuesta ha caducado o ahora choca con otro aparato. Arrastra otra vez.');return;
-   }
-   saveAction(()=>window.PanelDINInsert.apply(alt(),p),{electrical:false});
-   selected=p.movingId;view='physical';render();
-   toast('Intercalación DIN confirmada. Revisa peines, bornas, cableado y geometría real.');
-   return;
-  }
- }
  const flowDevice=e.target.closest('[data-flow-device]');
  if(flowDevice){
   const id=flowDevice.dataset.flowDevice;
@@ -873,7 +858,7 @@ document.addEventListener('dragstart',e=>{
  if(window.PanelDINReflow.pinned(alt(),physicalDragId)){
   physicalDragId=null;e.preventDefault();toast('Desbloquea esta posición antes de arrastrar el aparato.');return;
  }
- dinInsertPreview=null;clearDinDropMark();
+ clearDinDropMark();
  try{e.dataTransfer.setData('text/plain',physicalDragId);e.dataTransfer.effectAllowed='move';}catch(err){}
  selected=physicalDragId;
 });
@@ -896,12 +881,12 @@ document.addEventListener('drop',e=>{
  e.preventDefault();
  const id=physicalDragId;physicalDragId=null;
  const p=window.PanelDINInsert.plan(alt(),id,target.row,target.boundary);
- if(!p.ok){dinInsertPreview=null;toast(p.reason);return;}
- dinInsertPreview=p;view='physical';render();
- requestAnimationFrame(()=>{
-  const el=document.querySelector('[data-din-insert-preview]');
-  if(el){el.scrollIntoView({block:'nearest'});el.focus({preventScroll:true});}
- });
+ if(!p.ok){toast(p.reason);return;}
+ // La acción de soltar ES la autorización del cambio físico. Undo sigue disponible.
+ if(!window.PanelDINInsert.apply(clone(alt()),p)){toast('No se pudo aplicar la nueva posición. Repite el arrastre.');return;}
+ saveAction(()=>window.PanelDINInsert.apply(alt(),p),{electrical:false});
+ selected=id;view='physical';
+ toast('Intercalado: '+p.movements.length+' movimientos'+(p.cascaded?' · '+p.cascaded+' aparatos pasan a otro carril':'')+'. Puedes deshacer el cambio.');
 });
 document.addEventListener('dragend',()=>{physicalDragId=null;clearDinDropMark();});
 function openWizard(){const w=$('wizard');w.classList.add('open');w.setAttribute('aria-hidden','false');}

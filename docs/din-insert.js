@@ -1,6 +1,6 @@
-/* PanelBuilder v0.11 - inserción asistida dentro de un carril DIN.
- * Plan no mutante: recoloca un bloque conservando orden relativo y respeta
- * fijaciones, reserva de accesorios, capacidad y confirmación explícita.
+/* PanelBuilder v0.11 - intercalación DIN directa (deshacer reversible).
+ * Reflujo a carriles existentes; sin movimientos eléctricos ni cambio de envolvente.
+ * Respeta posiciones fijadas, reservas laterales y capacidad modular.
  */
 (function(root){'use strict';
 const R=()=>root.PanelDINReflow;
@@ -51,13 +51,56 @@ function plan(a,movingId,row,boundary){
   if(!R().audit(trial).clear)return null;
   return positions;
  }
- const original=build(false), positions=original||build(true);
- if(!positions)return {ok:false,reason:'No cabe en este carril respetando el orden, las reservas laterales y las posiciones fijadas. Usa la redistribución DIN asistida o revisa la envolvente.'};
+
+ // Si ni preservando huecos ni compactando cabe en el carril, propagar el
+ // sufijo al siguiente carril EXISTENTE, por delante de sus aparatos libres.
+ // No crear filas ni cambiar el formato. Una posición fijada jamás se mueve.
+ function spill(compact){
+  const positions={...current};
+  let carry=[];
+  for(let rr=row;rr<a.rows;rr++){
+   const originals=rr===row?order:byOrder(a,rr,movingId);
+   const queue=carry.concat(originals);
+   carry=[];let cursor=0;
+   for(let i=0;i<queue.length;i++){
+    const d=queue[i],native=d.row===rr;
+    const original=R().occupied(a,d);
+    const locked=R().pinned(a,d.id);
+    if(locked&&!native)return null;
+    const originalStart=native?original.start:0;
+    const start=locked?originalStart:
+      d.id===movingId&&rr===row?Math.max(cursor,compact?0:boundary):
+      Math.max(cursor,compact?0:originalStart);
+    const end=start+R().footprint(a,d);
+    if(locked&&start<cursor)return null;
+    if(end>a.slots){
+     // El equipo arrastrado debe quedar exactamente en el carril elegido.
+     // Nunca declarar éxito si él mismo acaba desbordado hacia otra fila.
+     if(d.id===movingId)return null;
+     carry=queue.slice(i);
+     if(carry.some(x=>R().pinned(a,x.id)))return null;
+     break;
+    }
+    positions[d.id]={row:rr,pos:start+R().leftModules(a,d)};
+    cursor=end;
+   }
+   if(!carry.length){
+    const trial={...a,devices:a.devices.map(d=>({...d,...positions[d.id]}))};
+    return R().audit(trial).clear?positions:null;
+   }
+  }
+  return null;
+ }
+ const original=build(false), compactPlan=original?null:build(true);
+ const within=original||compactPlan, positions=within||spill(false)||spill(true);
+ if(!positions)return {ok:false,reason:'No hay espacio en los carriles disponibles respetando las posiciones fijadas y las reservas laterales. Desbloquea un aparato o revisa la envolvente.'};
  const movements=a.devices.filter(d=>d.pos!==positions[d.id].pos||d.row!==positions[d.id].row)
    .map(d=>({id:d.id,label:d.label,from:'C'+(d.row+1)+' M'+(d.pos+1),
      to:'C'+(positions[d.id].row+1)+' M'+(positions[d.id].pos+1)}));
  if(!movements.length)return {ok:false,reason:'Este aparato ya ocupa la posición elegida.'};
- return {ok:true,signature,movingId,row,boundary,positions,movements,compacted:!original,
+ return {ok:true,signature,movingId,row,boundary,positions,movements,
+    compacted:!original&&!!compactPlan,
+    cascaded:movements.filter(m=>a.devices.find(d=>d.id===m.id)?.row!==positions[m.id].row&&m.id!==movingId).length,
     target:'Carril '+(row+1)+' · junto a '+(at<old.length?old[at].label:'final del carril'),
     unchanged:a.devices.length-movements.length};
 }
