@@ -1,7 +1,7 @@
 {
-  "sha": "578ae980ca36a2d32869e257e93e8e6f95930074",
+  "sha": "263438eb0edf2f24e57d7b7c4ca0b1aeb8810fb7",
   "branch": "feat/v0.11-unifilar-tecnico",
   "publication": "panelbuilder-demo",
-  "note": "R18: arrastrar aplica sin confirmación y cascada automáticamente a carriles existentes, sin cambiar unifilar, fijaciones ni capacidad.",
+  "note": "Ronda 19: marca efímera por aparato arrastrado, desplazado y cambio de carril; feedback undo/redo, reduced motion.",
   "deployedAt": null
 }

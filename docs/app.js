@@ -690,8 +690,8 @@ $('reserveInput').addEventListener('change',e=>saveAction(()=>{alt().reserve=Num
 $('alternativeSelect').addEventListener('change',e=>{dinProposalOpen=false;dinPreviewPlan=null;state.active=e.target.value;selected=alt().devices[0]?.id||null;selectedCircuit=null;selectedBar=null;persist();render();});
 $('duplicateBtn').addEventListener('click',()=>{const suffix=Object.keys(state.alternatives).length+1;let keyName='B';while(state.alternatives[keyName])keyName=String.fromCharCode(keyName.charCodeAt(0)+1);saveAction(()=>{state.alternatives[keyName]=clone(alt());state.alternatives[keyName].name='Alternativa '+keyName;state.active=keyName;},{electrical:false});toast('Alternativa independiente creada.');});
 $('proposeBtn').addEventListener('click',doProposal);
-$('undoBtn').addEventListener('click',()=>{dinProposalOpen=false;dinPreviewPlan=null;if(!undo.length)return toast('No hay cambios que deshacer.');redo.push(clone(state));state=undo.pop();persist();render();});
-$('redoBtn').addEventListener('click',()=>{dinProposalOpen=false;dinPreviewPlan=null;if(!redo.length)return toast('No hay cambios que rehacer.');undo.push(clone(state));state=redo.pop();persist();render();});
+$('undoBtn').addEventListener('click',()=>{dinProposalOpen=false;dinPreviewPlan=null;if(!undo.length)return toast('No hay cambios que deshacer.');const prior=alt(),fromKey=state.active;redo.push(clone(state));state=undo.pop();persist();render();if(view==='physical'&&fromKey===state.active)window.PanelDINMotion.flash(window.PanelDINMotion.changes(prior,alt()));});
+$('redoBtn').addEventListener('click',()=>{dinProposalOpen=false;dinPreviewPlan=null;if(!redo.length)return toast('No hay cambios que rehacer.');const prior=alt(),fromKey=state.active;undo.push(clone(state));state=redo.pop();persist();render();if(view==='physical'&&fromKey===state.active)window.PanelDINMotion.flash(window.PanelDINMotion.changes(prior,alt()));});
 document.addEventListener('click',e=>{
  const flowDevice=e.target.closest('[data-flow-device]');
  if(flowDevice){
@@ -884,8 +884,10 @@ document.addEventListener('drop',e=>{
  if(!p.ok){toast(p.reason);return;}
  // La acción de soltar ES la autorización del cambio físico. Undo sigue disponible.
  if(!window.PanelDINInsert.apply(clone(alt()),p)){toast('No se pudo aplicar la nueva posición. Repite el arrastre.');return;}
- saveAction(()=>window.PanelDINInsert.apply(alt(),p),{electrical:false});
+ const before=clone(alt());
  selected=id;view='physical';
+ saveAction(()=>window.PanelDINInsert.apply(alt(),p),{electrical:false});
+ window.PanelDINMotion.flash(window.PanelDINMotion.changes(before,alt(),id));
  toast('Intercalado: '+p.movements.length+' movimientos'+(p.cascaded?' · '+p.cascaded+' aparatos pasan a otro carril':'')+'. Puedes deshacer el cambio.');
 });
 document.addEventListener('dragend',()=>{physicalDragId=null;clearDinDropMark();});

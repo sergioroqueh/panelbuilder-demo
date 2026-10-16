@@ -377,3 +377,33 @@ body.canvas-focus .editor-grid{grid-template-columns:minmax(0,1fr)}
 .din-insert-moves{max-height:168px;overflow-y:auto;margin:8px 0;padding:4px 10px;border:1px solid #cbd9e8;border-radius:6px;background:#fff}
 .din-insert-moves p{margin:4px 0}
 .din-insert-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:11px}
+
+/* Ronda 19: marca temporal, solo DOM, para reordenación DIN directa.
+ * Contorno sobrepuesto (no altera la huella DIN ni la cuadrícula). */
+.rail-grid>.device[data-din-motion="dragged"]{
+ outline:3px solid #1768b2;outline-offset:-2px;background:#dceefe;
+ animation:din-flash-dragged 1.85s ease-out both;
+}
+.rail-grid>.device[data-din-motion="shifted"]{
+ outline:2px solid #b16b10;outline-offset:-2px;background:#fff1ca;
+ animation:din-flash-shifted 1.85s ease-out both;
+}
+.rail-grid>.device[data-din-motion="crossrail"]{
+ outline:3px solid #7951a5;outline-offset:-2px;background:#eadbfa;
+ animation:din-flash-crossrail 1.85s ease-out both;
+}
+@keyframes din-flash-dragged{
+ 0%,48%{outline-color:#1768b2;background:#dceefe}
+ 100%{outline-color:transparent;background:transparent}
+}
+@keyframes din-flash-shifted{
+ 0%,48%{outline-color:#b16b10;background:#fff1ca}
+ 100%{outline-color:transparent;background:transparent}
+}
+@keyframes din-flash-crossrail{
+ 0%,48%{outline-color:#7951a5;background:#eadbfa}
+ 100%{outline-color:transparent;background:transparent}
+}
+@media (prefers-reduced-motion: reduce){
+ .rail-grid>.device[data-din-motion]{animation:none}
+}
