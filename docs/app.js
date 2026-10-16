@@ -31,7 +31,7 @@ let camera={x:0,y:0,zoom:.85,initialized:false,alternative:'',width:0,height:0};
 let canvasFocus=false, inspectorDrawer=false;
 let diagramStyle='technical';
 let physicalDetail='basic';
-let dinProposalOpen=false,dinPreviewPlan=null;
+let dinProposalOpen=false,dinPreviewPlan=null,dinInsertPreview=null;
 try{physicalDetail=localStorage.getItem('PanelBuilder_v11_physicalDetail')==='advanced'?'advanced':'basic';}catch(err){}
 try{diagramStyle=localStorage.getItem('PanelBuilder_v11_diagramStyle_v3')==='blocks'?'blocks':'technical';}catch(err){}
 try {const raw=localStorage.getItem(key)||localStorage.getItem('PanelBuilder_v10_workbench')||localStorage.getItem('PanelBuilder_v09_workbench')||localStorage.getItem('PanelBuilder_v06_workbench')||localStorage.getItem('PanelBuilder_v05_workbench')||localStorage.getItem('PanelBuilder_v04_workbench')||localStorage.getItem('PanelBuilder_v03_workbench');
@@ -116,7 +116,7 @@ function persist(){try{localStorage.setItem(key,JSON.stringify(state))}catch(e){
 function syncWidths(){alt().devices=alt().devices.map(d=>{
  const m=brandMatch(d); return {...d,modules:m?m.modules:E.estimateModules(d),moduleSource:m?'catalog':'estimate',matchedRef:m?m.ref:null};});}
 function syncWidthsAcrossAlternatives(){for(const a of Object.values(state.alternatives)){a.assignments={};a.physicalSelections={};window.PanelMountClearance.clearProfiles(a);a.devices=E.recalcWidths(a.devices,'Generico');a.layoutDirty=true;}}
-function saveAction(fn,{electrical=true}={}){dinProposalOpen=false;dinPreviewPlan=null;undo.push(clone(state));if(undo.length>50)undo.shift();redo=[];fn();if(electrical){alt().assignments={};alt().physicalSelections={};window.PanelMountClearance.clearProfiles(alt());}syncWidths();if(electrical){alt().layoutDirty=true;}persist();render();}
+function saveAction(fn,{electrical=true}={}){dinProposalOpen=false;dinPreviewPlan=null;dinInsertPreview=null;undo.push(clone(state));if(undo.length>50)undo.shift();redo=[];fn();if(electrical){alt().assignments={};alt().physicalSelections={};window.PanelMountClearance.clearProfiles(alt());}syncWidths();if(electrical){alt().layoutDirty=true;}persist();render();}
 function toast(msg){const el=$('toast');el.textContent=msg;el.classList.add('visible');clearTimeout(noticeTimer);noticeTimer=setTimeout(()=>el.classList.remove('visible'),3100);}
 function format(d){let s=d.poles||'';if(d.kind==='MCB')s+=` · ${d.amp||'?'} A · ${d.curve||'?'}${d.amp?'':''}`;
  else if(d.kind==='RCD')s+=` · ${d.amp||'?'} A · ${d.sensitivity||'?'} mA · ${d.rcdType||'?'} `;
@@ -332,9 +332,9 @@ function performInsert(kind){
 function renderCabinet(){const a=alt(),has=!!a.rows;const dinHtml=window.PanelDINReflow.render(a,dinProposalOpen,escape,d=>state.brand==='Generico'?null:window.PanelCommercialPlacement.resolve(d,a,state.brand));const auxiliary=window.PanelPhysicalAux.physical(a,escape);const occupied=a.devices.reduce((s,d)=>s+Number(d.modules),0);const dimensionalIssues=window.PanelDINReflow.mmReport(a,d=>state.brand==='Generico'?null:window.PanelCommercialPlacement.resolve(d,a,state.brand)).issues.length+window.PanelMountClearance.report(a).issues.length+window.PanelDINAssemblies.report(a,state.brand).issues.length;const unplaced=a.devices.filter(d=>d.row===null||d.pos===null);
  let blocks=''; if(has){for(let row=0;row<a.rows;row++){let cell='';for(let pos=0;pos<a.slots;pos++)cell+=`<div class="slot" style="grid-column:${pos+1};" data-slot="${row}:${pos}" title="Carril ${row+1}, módulo ${pos+1}"></div>`;
  a.devices.filter(d=>d.row===row&&d.pos!==null).forEach(d=>{const fixed=window.PanelDINReflow.pinned(a,d.id),match=brandMatch(d),color=deviceAccent(d),chip=match?`<span class="device-chip" style="background:${color}">${shortBrand(state.brand)}</span>`:'',kind=d.kind==='MCB1'?'MCB':d.kind;cell+=`<button type="button" draggable="${fixed?'false':'true'}" class="device ${selected===d.id?'selected':''}" style="grid-column:${d.pos+1}/span ${d.modules};--device-accent:${color}" data-device="${escape(d.id)}" data-physical-device="${escape(d.id)}" title="${escape(d.label)} · ${d.modules} módulos"><div class="device-head"><strong>${escape(cut(d.label,9))}</strong>${chip}${fixed?'<span title="Posición fijada">📌</span>':''}</div>${cabinetFigure(kind)}<small>${escape(kind)} · ${d.moduleSource==='catalog'?`${match.widthMm} mm · ${d.modules}M`:`≈ ${d.modules}M`}</small></button>`});
- blocks+=`<div class="rail-block"><div class="rail-heading"><span>Carril DIN ${row+1}</span><span>${a.slots} módulos</span></div><div class="rail-grid" style="--cols:${a.slots}">${cell}</div></div>`;}}
+ blocks+=`<div class="rail-block"><div class="rail-heading"><span>Carril DIN ${row+1}</span><span>${a.slots} módulos</span></div><div class="rail-grid" data-din-rail="${row}" style="--cols:${a.slots}">${cell}</div></div>`;}}
  return `<div class="work-card"><div class="card-header"><div><strong>② Propuesta de distribución física</strong><small>${has?`${a.rows} fila(s) × ${a.slots} M · ${occupied} M de aparatos`: 'Sin envolvente asignada todavía'}</small></div><span class="badge ${a.layoutDirty||dimensionalIssues?'amber':'green'}">${!has?'Pendiente':a.layoutDirty?'Recalcular':dimensionalIssues?'Revisar cotas':'Distribuida'}</span></div><div class="physical-shortcut-row"><button type="button" class="button small" data-view="unifilar">← Volver al unifilar</button><div class="physical-detail-toggle" role="group" aria-label="Nivel de detalle físico"><button type="button" class="button small ${physicalDetail==='basic'?'primary':''}" data-action="physicalBasic" aria-pressed="${physicalDetail==='basic'}">Diseño básico</button><button type="button" class="button small ${physicalDetail==='advanced'?'primary':''}" data-action="physicalAdvanced" aria-pressed="${physicalDetail==='advanced'}">Detalle constructivo</button></div></div><div class="card-body">${!has?'<div class="empty-view"><strong>Sin propuesta física</strong><p>Pulsa «Proponer envolvente y distribución» cuando hayas introducido los componentes genéricos.</p></div>':`<div class="cabinet-shell"><div class="cabinet-core">${physicalDetail==='advanced'?auxiliary.header:''}${blocks}${physicalDetail==='advanced'?auxiliary.side:''}${physicalDetail==='advanced'?auxiliary.bottom:''}</div><div class="cabinet-bottom">${a.enclosureSelection?'DISTRIBUCIÓN GENÉRICA · ENVOLVENTE COMERCIAL SIN VALIDAR':'ENVOLVENTE GENÉRICA · CAPACIDAD NOMINAL'}</div></div>`}
- ${physicalDetail==='advanced'?`<div data-physical-advanced="true">${window.PanelEnclosureGeometry.preview(a,escape,d=>state.brand==='Generico'?null:window.PanelCommercialPlacement.resolve(d,a,state.brand))}${auxiliary.panel}${window.PanelEnclosureGeometry.form(a,escape)}${window.PanelConstruction.form(a,escape)}${window.PanelMountClearance.railForm(a,escape)}${window.PanelPhysicalAccessories.render(a,state.brand,escape)}${window.PanelDINAssemblies.render(a,state.brand,escape)}${window.PanelManufacturerResearch.render()}${window.PanelManufacturerHosts.render()}${window.PanelManufacturerR15.render()}</div>`:`<div class="physical-basic-hint" data-physical-basic="true"><strong>Montaje modular listo para organizar.</strong><span>El estudio de canaletas, carriles y dimensiones se conserva en «Detalle constructivo». Cambiar de modo no modifica tus datos.</span></div>`}${dinHtml}${window.PanelMountClearance.summary(a,escape)}${window.PanelEnclosureCandidates.render(a,escape)}${has&&unplaced.length?`<div class="unplaced-card"><strong>${unplaced.length} aparato(s) sin colocar:</strong> ${unplaced.map(d=>escape(d.label)).join(", ")}. Pulsa «Proponer envolvente y distribución» para actualizar el montaje.</div>`:""}<div class="placeholder-tape">La distribución DIN es una <b>estimación modular</b> calculada con anchuras provisionales; la representación auxiliar de barras y bornas NO determina huecos ni dimensiones interiores reales. Faltan canaletas, soportes, cableado, térmica y accesorios. La comprobación final exigirá referencias comerciales y una envolvente verificada.</div></div></div>`;
+ ${physicalDetail==='advanced'?`<div data-physical-advanced="true">${window.PanelEnclosureGeometry.preview(a,escape,d=>state.brand==='Generico'?null:window.PanelCommercialPlacement.resolve(d,a,state.brand))}${auxiliary.panel}${window.PanelEnclosureGeometry.form(a,escape)}${window.PanelConstruction.form(a,escape)}${window.PanelMountClearance.railForm(a,escape)}${window.PanelPhysicalAccessories.render(a,state.brand,escape)}${window.PanelDINAssemblies.render(a,state.brand,escape)}${window.PanelManufacturerResearch.render()}${window.PanelManufacturerHosts.render()}${window.PanelManufacturerR15.render()}</div>`:`<div class="physical-basic-hint" data-physical-basic="true"><strong>Montaje modular listo para organizar.</strong><span>El estudio de canaletas, carriles y dimensiones se conserva en «Detalle constructivo». Cambiar de modo no modifica tus datos.</span></div>`}${window.PanelDINInsert.render(dinInsertPreview,escape)}${dinHtml}${window.PanelMountClearance.summary(a,escape)}${window.PanelEnclosureCandidates.render(a,escape)}${has&&unplaced.length?`<div class="unplaced-card"><strong>${unplaced.length} aparato(s) sin colocar:</strong> ${unplaced.map(d=>escape(d.label)).join(", ")}. Pulsa «Proponer envolvente y distribución» para actualizar el montaje.</div>`:""}<div class="placeholder-tape">La distribución DIN es una <b>estimación modular</b> calculada con anchuras provisionales; la representación auxiliar de barras y bornas NO determina huecos ni dimensiones interiores reales. Faltan canaletas, soportes, cableado, térmica y accesorios. La comprobación final exigirá referencias comerciales y una envolvente verificada.</div></div></div>`;
 }
 function renderMaterials(){
  const auxStats=window.PanelPhysicalAux.stats(alt());
@@ -690,9 +690,24 @@ $('reserveInput').addEventListener('change',e=>saveAction(()=>{alt().reserve=Num
 $('alternativeSelect').addEventListener('change',e=>{dinProposalOpen=false;dinPreviewPlan=null;state.active=e.target.value;selected=alt().devices[0]?.id||null;selectedCircuit=null;selectedBar=null;persist();render();});
 $('duplicateBtn').addEventListener('click',()=>{const suffix=Object.keys(state.alternatives).length+1;let keyName='B';while(state.alternatives[keyName])keyName=String.fromCharCode(keyName.charCodeAt(0)+1);saveAction(()=>{state.alternatives[keyName]=clone(alt());state.alternatives[keyName].name='Alternativa '+keyName;state.active=keyName;},{electrical:false});toast('Alternativa independiente creada.');});
 $('proposeBtn').addEventListener('click',doProposal);
-$('undoBtn').addEventListener('click',()=>{dinProposalOpen=false;dinPreviewPlan=null;if(!undo.length)return toast('No hay cambios que deshacer.');redo.push(clone(state));state=undo.pop();persist();render();});
-$('redoBtn').addEventListener('click',()=>{dinProposalOpen=false;dinPreviewPlan=null;if(!redo.length)return toast('No hay cambios que rehacer.');undo.push(clone(state));state=redo.pop();persist();render();});
+$('undoBtn').addEventListener('click',()=>{dinProposalOpen=false;dinPreviewPlan=null;dinInsertPreview=null;if(!undo.length)return toast('No hay cambios que deshacer.');redo.push(clone(state));state=undo.pop();persist();render();});
+$('redoBtn').addEventListener('click',()=>{dinProposalOpen=false;dinPreviewPlan=null;dinInsertPreview=null;if(!redo.length)return toast('No hay cambios que rehacer.');undo.push(clone(state));state=redo.pop();persist();render();});
 document.addEventListener('click',e=>{
+ const insertAction=e.target.closest('[data-din-insert-action]');
+ if(insertAction){
+  const action=insertAction.dataset.dinInsertAction;
+  if(action==='cancel'){dinInsertPreview=null;render();toast('Inserción DIN cancelada. Se conservan las posiciones.');return;}
+  if(action==='confirm'){
+   const p=dinInsertPreview;
+   if(!p?.ok||!window.PanelDINInsert.apply(clone(alt()),p)){
+    dinInsertPreview=null;render();toast('La propuesta ha caducado o ahora choca con otro aparato. Arrastra otra vez.');return;
+   }
+   saveAction(()=>window.PanelDINInsert.apply(alt(),p),{electrical:false});
+   selected=p.movingId;view='physical';render();
+   toast('Intercalación DIN confirmada. Revisa peines, bornas, cableado y geometría real.');
+   return;
+  }
+ }
  const flowDevice=e.target.closest('[data-flow-device]');
  if(flowDevice){
   const id=flowDevice.dataset.flowDevice;
@@ -832,12 +847,63 @@ document.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.tar
 $('exportBtn').addEventListener('click',()=>{const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='PanelBuilder_'+state.active+'_v11.json';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),500);});
 $('importBtn').addEventListener('click',()=>$('fileInput').click());
 $('fileInput').addEventListener('change',async e=>{const file=e.target.files?.[0];if(!file)return;try{const txt=await file.text();if(txt.length>2_000_000)throw Error('Archivo demasiado grande.');const p=JSON.parse(txt);if(!validProject(p))throw Error('Proyecto no reconocido o incompatible con v0.11.');saveAction(()=>{state=p;state.version=11;Object.values(state.alternatives).forEach(a=>{a.circuits=Array.isArray(a.circuits)?a.circuits:[];a.busbars=Array.isArray(a.busbars)?a.busbars:[];a.auxiliaryZones=a.auxiliaryZones||{bars:{},circuits:{}};a.assignments=([6,8,9,10,11].includes(p.version)?a.assignments||{}:{});a.devices=a.devices.map(d=>{const rec=state.brand==='Generico'?null:(window.PanelCommercialPlacement.resolve(d,a,state.brand)||M.normalized(d,state.brand,a.assignments?.[d.id]));return {...d,modules:rec?rec.modules:E.estimateModules(d),moduleSource:rec?'catalog':'estimate',matchedRef:rec?.ref||null};});a.layoutDirty=true;});selected=alt().devices[0]?.id||null;selectedCircuit=null;selectedBar=null;camera.initialized=false;},{electrical:false});toast('Proyecto importado y anchuras revisadas. Recalcula la distribución.');}catch(err){toast(err.message);}e.target.value='';});
+
 let physicalDragId=null;
-document.addEventListener('dragstart',e=>{const btn=e.target.closest('[data-physical-device]');if(!btn)return;physicalDragId=btn.dataset.physicalDevice;if(window.PanelDINReflow.pinned(alt(),physicalDragId)){physicalDragId=null;e.preventDefault();toast('Desbloquea esta posición antes de arrastrar el aparato.');return;}try{e.dataTransfer.setData('text/plain',physicalDragId);e.dataTransfer.effectAllowed='move';}catch(err){};selected=physicalDragId;});
-document.addEventListener('dragover',e=>{if(!physicalDragId)return;const t=e.target.closest('[data-slot],[data-physical-device]');if(!t)return;e.preventDefault();});
-document.addEventListener('drop',e=>{if(!physicalDragId)return;const t=e.target.closest('[data-slot],[data-physical-device]');if(!t)return;e.preventDefault();let row,pos;if(t.dataset.slot){[row,pos]=t.dataset.slot.split(':').map(Number);}else if(t.dataset.physicalDevice){const td=alt().devices.find(x=>x.id===t.dataset.physicalDevice);if(!td)return;row=td.row;pos=td.pos;}
- if(window.PanelDINReflow.pinned(alt(),physicalDragId)){physicalDragId=null;toast('Posición DIN fijada.');return;}const fit=findNearestPlacement(physicalDragId,row,pos);if(!fit){toast('No se ha encontrado hueco cercano en la envolvente actual.');physicalDragId=null;return;}saveAction(()=>{const d=alt().devices.find(x=>x.id===physicalDragId);d.row=fit.row;d.pos=fit.pos;selected=physicalDragId;},{electrical:false});toast(`Protección recolocada en carril ${fit.row+1}, módulo ${fit.pos+1}.`);physicalDragId=null;});
-document.addEventListener('dragend',()=>{physicalDragId=null;});
+function clearDinDropMark(){document.querySelectorAll('.din-drop-marker').forEach(x=>x.remove());}
+function dinDropTarget(e){
+ const grid=e.target.closest('.rail-grid');if(!grid||!physicalDragId)return null;
+ const row=Number(grid.dataset.dinRail);
+ if(!Number.isInteger(row)||row<0||row>=alt().rows)return null;
+ const over=e.target.closest('[data-physical-device]'),device=alt().devices.find(d=>d.id===over?.dataset.physicalDevice);
+ let boundary;
+ if(device&&device.row===row){
+  const rect=over.getBoundingClientRect();
+  const span=window.PanelDINReflow.occupied(alt(),device);
+  boundary=e.clientX<rect.left+rect.width/2?span.start:span.end;
+ }else{
+  const rect=grid.getBoundingClientRect();
+  boundary=Math.round((e.clientX-rect.left)/rect.width*alt().slots);
+ }
+ boundary=Math.min(alt().slots,Math.max(0,boundary));
+ return {grid,row,boundary};
+}
+document.addEventListener('dragstart',e=>{
+ const btn=e.target.closest('[data-physical-device]');if(!btn)return;
+ physicalDragId=btn.dataset.physicalDevice;
+ if(window.PanelDINReflow.pinned(alt(),physicalDragId)){
+  physicalDragId=null;e.preventDefault();toast('Desbloquea esta posición antes de arrastrar el aparato.');return;
+ }
+ dinInsertPreview=null;clearDinDropMark();
+ try{e.dataTransfer.setData('text/plain',physicalDragId);e.dataTransfer.effectAllowed='move';}catch(err){}
+ selected=physicalDragId;
+});
+document.addEventListener('dragover',e=>{
+ const target=dinDropTarget(e);if(!target)return;
+ e.preventDefault();
+ if(e.dataTransfer)e.dataTransfer.dropEffect='move';
+ clearDinDropMark();
+ const marker=document.createElement('span');
+ marker.className='din-drop-marker';
+ marker.setAttribute('aria-hidden','true');
+ marker.style.left=(100*target.boundary/alt().slots)+'%';
+ target.grid.appendChild(marker);
+});
+document.addEventListener('drop',e=>{
+ if(!physicalDragId)return;
+ const target=dinDropTarget(e);
+ clearDinDropMark();
+ if(!target){physicalDragId=null;return;}
+ e.preventDefault();
+ const id=physicalDragId;physicalDragId=null;
+ const p=window.PanelDINInsert.plan(alt(),id,target.row,target.boundary);
+ if(!p.ok){dinInsertPreview=null;toast(p.reason);return;}
+ dinInsertPreview=p;view='physical';render();
+ requestAnimationFrame(()=>{
+  const el=document.querySelector('[data-din-insert-preview]');
+  if(el){el.scrollIntoView({block:'nearest'});el.focus({preventScroll:true});}
+ });
+});
+document.addEventListener('dragend',()=>{physicalDragId=null;clearDinDropMark();});
 function openWizard(){const w=$('wizard');w.classList.add('open');w.setAttribute('aria-hidden','false');}
 function closeWizard(){const w=$('wizard');w.classList.remove('open');w.setAttribute('aria-hidden','true');try{localStorage.setItem('PanelBuilder_wizardSeen_v05','1')}catch(e){}}
 $('startGuide').addEventListener('click',openWizard);$('closeWizard').addEventListener('click',closeWizard);$('skipWizard').addEventListener('click',closeWizard);

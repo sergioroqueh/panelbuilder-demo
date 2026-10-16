@@ -369,3 +369,11 @@ body.canvas-focus .editor-grid{grid-template-columns:minmax(0,1fr)}
 .materials-heading-actions{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
 @media(max-width:980px){.workflow-guidance-steps{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:480px){.workflow-guidance-steps{grid-template-columns:minmax(0,1fr)}.responsibility-banner{font-size:11px}}
+
+/* Ronda 17: inserción DIN asistida. Marcador sobre dispositivos adyacentes. */
+.din-drop-marker{position:absolute;top:0;bottom:0;width:0;z-index:12;pointer-events:none;border-left:3px solid #2374df;filter:drop-shadow(0 0 3px #2374df88)}
+.din-drop-marker:before{content:"▼";position:absolute;top:-16px;left:-7px;color:#2374df;font-size:13px}
+.din-insert-review{margin:14px 0;padding:14px;border:2px solid #7395bf;background:#f7faff;border-radius:9px}
+.din-insert-moves{max-height:168px;overflow-y:auto;margin:8px 0;padding:4px 10px;border:1px solid #cbd9e8;border-radius:6px;background:#fff}
+.din-insert-moves p{margin:4px 0}
+.din-insert-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:11px}

@@ -1,7 +1,7 @@
 {
-  "sha": "69e3c644fe584b99988a50eeb62db0804a4df00f",
+  "sha": "c4e55dbb40a455c98d60906e1bd655caccec0968",
   "branch": "feat/v0.11-unifilar-tecnico",
   "publication": "panelbuilder-demo",
-  "note": "Ronda 16: + paridad con biblioteca, SPD derivación lateral, PE pendiente en guía. No valida montaje.",
+  "note": "R17: intercalación asistida DIN por DnD; preview con confirmación, fijaciones/reservas, compactación opcional. 62/62 pruebas.",
   "deployedAt": null
 }
