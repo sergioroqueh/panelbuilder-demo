@@ -1,7 +1,7 @@
 {
-  "sha": "263438eb0edf2f24e57d7b7c4ca0b1aeb8810fb7",
+  "sha": "a09cceafb85f60e50730e9d180043074fe346a9b",
   "branch": "feat/v0.11-unifilar-tecnico",
   "publication": "panelbuilder-demo",
-  "note": "Ronda 19: marca efímera por aparato arrastrado, desplazado y cambio de carril; feedback undo/redo, reduced motion.",
+  "note": "R20: destello DIN 800ms sin transparencia, geometría oficial contextual Hager Legrand por SKU, sin cambios eléctricos.",
   "deployedAt": null
 }

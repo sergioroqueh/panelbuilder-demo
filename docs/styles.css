@@ -378,32 +378,42 @@ body.canvas-focus .editor-grid{grid-template-columns:minmax(0,1fr)}
 .din-insert-moves p{margin:4px 0}
 .din-insert-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:11px}
 
-/* Ronda 19: marca temporal, solo DOM, para reordenación DIN directa.
- * Contorno sobrepuesto (no altera la huella DIN ni la cuadrícula). */
+/* Ronda 20: feedback DIN breve y opaco; no modificar el fondo del aparato.
+ * Solo destella el contorno: conserva el degradado físico en todo momento. */
 .rail-grid>.device[data-din-motion="dragged"]{
- outline:3px solid #1768b2;outline-offset:-2px;background:#dceefe;
- animation:din-flash-dragged 1.85s ease-out both;
+ outline:3px solid #1768b2;outline-offset:-2px;
+ animation:din-flash-dragged .7s ease-out both;
 }
 .rail-grid>.device[data-din-motion="shifted"]{
- outline:2px solid #b16b10;outline-offset:-2px;background:#fff1ca;
- animation:din-flash-shifted 1.85s ease-out both;
+ outline:2px solid #b16b10;outline-offset:-2px;
+ animation:din-flash-shifted .7s ease-out both;
 }
 .rail-grid>.device[data-din-motion="crossrail"]{
- outline:3px solid #7951a5;outline-offset:-2px;background:#eadbfa;
- animation:din-flash-crossrail 1.85s ease-out both;
+ outline:3px solid #7951a5;outline-offset:-2px;
+ animation:din-flash-crossrail .7s ease-out both;
 }
 @keyframes din-flash-dragged{
- 0%,48%{outline-color:#1768b2;background:#dceefe}
- 100%{outline-color:transparent;background:transparent}
+ 0%,35%{outline-color:#1768b2}
+ 100%{outline-color:transparent}
 }
 @keyframes din-flash-shifted{
- 0%,48%{outline-color:#b16b10;background:#fff1ca}
- 100%{outline-color:transparent;background:transparent}
+ 0%,35%{outline-color:#b16b10}
+ 100%{outline-color:transparent}
 }
 @keyframes din-flash-crossrail{
- 0%,48%{outline-color:#7951a5;background:#eadbfa}
- 100%{outline-color:transparent;background:transparent}
+ 0%,35%{outline-color:#7951a5}
+ 100%{outline-color:transparent}
 }
 @media (prefers-reduced-motion: reduce){
  .rail-grid>.device[data-din-motion]{animation:none}
 }
+
+/* Ronda 20 · Cotas documentales sin imponer geometría de fabricante. */
+.manufacturer-din-review{margin:12px 0;border:1px solid #d9e4f1;border-radius:8px;padding:10px 12px;font-size:11px;color:#52647b;background:#f8fbff}
+.manufacturer-din-review>summary{font-weight:650;color:#294869;cursor:pointer;line-height:1.55}
+.manufacturer-din-review>p{line-height:1.6;margin:8px 0}
+.manufacturer-din-review ul{padding-left:18px;margin:8px 0;display:grid;gap:8px}
+.manufacturer-din-review li{line-height:1.65}
+.manufacturer-din-review li a{margin-left:8px;white-space:nowrap}
+.manufacturer-din-mismatch,.manufacturer-din-pending{color:#895b13;font-weight:650}
+.manufacturer-din-note{color:#6e7c91}

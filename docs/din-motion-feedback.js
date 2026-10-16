@@ -42,7 +42,7 @@ function flash(moves,doc=root.document){
   el.setAttribute('title',(el.dataset.dinPriorTitle||'')+detail);
   highlighted.push(el);
  });
- if(highlighted.length)cleanupTimer=root.setTimeout(clear,2100);
+ if(highlighted.length)cleanupTimer=root.setTimeout(clear,800);
  return highlighted.length;
 }
 root.PanelDINMotion=Object.freeze({changes,flash,clear});
