@@ -8,7 +8,19 @@ const items=Object.freeze([
   family:'iC60 / Acti9 (compatibilidad de familia, no conjunto completo)',
   source:'https://www.se.com/es/es/product/A9A26904/acti9-iof-contacto-auxiliar-100ma-to-6a-acdc/',
   detail:'Acoplamiento por clip a la izquierda según fabricante. Anchura instalada y combinaciones de auxiliares pendientes.'},
- {brand:'Hager',ref:'MZ201',kind:'auxiliar',name:'Contacto auxiliar 1NA+1NC, series M/N/HM/ML',side:'unknown',documentedSide:'left',widthMm:9.5,modules:0.5,
+ ...['A9A26914','A9A26907','A9A26919'].map(ref=>{
+  const d=root.PanelManufacturerR15.byKey('Schneider',ref);
+  return {brand:d.brand,ref:d.ref,kind:'auxiliar',name:d.name,side:d.side,widthMm:null,modules:null,
+   family:'Acti9 según ficha individual. Verificar anfitrión y orden con manual.',source:d.source,
+   detail:d.facts.join(' · ')+' Anchura montada NO acreditada; no reserva automáticamente.'};
+ }),
+ ...['406260','406262','406266'].map(ref=>{
+  const d=root.PanelManufacturerR15.byKey('Legrand',ref);
+  return {brand:d.brand,ref:d.ref,kind:'auxiliar',name:d.name,side:'unknown',widthMm:null,modules:null,
+   family:'DX³ documental sin unión a SKU de protección verificada.',source:d.source,
+   detail:d.facts.join(' · ')+' Posición y anchura instaladas pendientes.'};
+ }),
+  {brand:'Hager',ref:'MZ201',kind:'auxiliar',name:'Contacto auxiliar 1NA+1NC, series M/N/HM/ML',side:'unknown',documentedSide:'left',widthMm:9.5,modules:0.5,
   family:'M / N / HM / ML, exclusivamente según ficha Hager',
   source:'https://hager.com/es/catalogo/producto/mz201-contacto-auxiliar-1na-1nc-5a',
   detail:'Anchura de producto 9,50 mm y ocupación nominal 0,5 M, que NO equivale a 9 mm libres. Un catálogo oficial Hager (edición histórica, p. 4.28) indica montaje lateral izquierdo; contrastar siempre SKU anfitrión y revisión vigente.'},
