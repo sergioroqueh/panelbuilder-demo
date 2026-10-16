@@ -1,6 +1,7 @@
 {
-  "sha": "f2e5352d788ea29c72c274486206f2cfbc9fa75f",
+  "sha": "6d02ba196a6ffa34a282f75e3a922a5e670081aa",
   "branch": "feat/v0.11-unifilar-tecnico",
-  "deployedAt": "2026-10-15T21:51:00.755Z",
-  "publication": "panelbuilder-demo"
+  "deployedAt": null,
+  "publication": "panelbuilder-demo",
+  "note": "Primera ronda de accesorios y peines; no certifica el montaje."
 }
