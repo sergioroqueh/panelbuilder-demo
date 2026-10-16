@@ -12,7 +12,16 @@ const items=Object.freeze([
   family:'M / N / HM / ML, exclusivamente según ficha Hager',
   source:'https://hager.com/es/catalogo/producto/mz201-contacto-auxiliar-1na-1nc-5a',
   detail:'Anchura de producto 9,50 mm y ocupación nominal 0,5 M, que NO equivale a 9 mm libres. Un catálogo oficial Hager (edición histórica, p. 4.28) indica montaje lateral izquierdo; contrastar siempre SKU anfitrión y revisión vigente.'},
- {brand:'Schneider',ref:'A9XPH112',kind:'peine',name:'Peine 1P, 12 módulos de 18 mm',side:'comb',widthMm:null,modules:null,
+ ...['MZ202','MZ203','MZ204','MZ206'].map(ref=>{
+  const doc=root.PanelManufacturerResearch.byKey('Hager',ref);
+  return {brand:'Hager',ref,kind:'auxiliar',name:doc.name,side:doc.side||'unknown',
+   documentedSide:doc.side||undefined,widthMm:doc.widthMm,modules:doc.modules,
+   family:'Series M/N/HM/ML, validación de anfitrión individual pendiente',
+   source:doc.source,
+   detail:'Anchura exterior '+doc.widthMm+' mm, ficha del SKU. '+doc.unknown+
+     '. No implica combinación aprobada ni que deba elegirse automáticamente.'};
+ }),
+  {brand:'Schneider',ref:'A9XPH112',kind:'peine',name:'Peine 1P, 12 módulos de 18 mm',side:'comb',widthMm:null,modules:null,
   family:'K60N/C60/ID descritos por fabricante; verificar referencia del dispositivo, borne y régimen',
   source:'https://www.se.com/es/es/product/A9XPH112/peine-unipolar-24-pasos-k60n-c60-id/',
   detail:'12 módulos es longitud nominal de catálogo, NO longitud física útil acreditada. Faltan dientes, corte, tapas, alimentación y disposición exacta.'},

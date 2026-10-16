@@ -1,7 +1,7 @@
 {
-  "sha": "0a8f5e4358280373e4d7e364c57f25293f13262d",
+  "sha": "9dc471aeefd657dda06e93eae45db5ab739208b7",
   "branch": "feat/v0.11-unifilar-tecnico",
-  "deployedAt": null,
   "publication": "panelbuilder-demo",
-  "note": "Ronda 12: reservas DIN bilaterales con confirmación. Sin conformidad de montaje."
+  "note": "Ronda 13: lote 13 SKU fabricante; cotas por referencia sin certificación ni PVP auto.",
+  "deployedAt": null
 }

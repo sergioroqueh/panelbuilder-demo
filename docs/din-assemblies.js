@@ -99,6 +99,7 @@ function report(a,activeBrand){
     if(complete)width+=w;
    }
    if(!sides[side].length)continue;
+   if(a.physicalAccessoryPlans?.[id]&&a.physicalAccessoryPlans[id].ref){pending.push(d.label+': existen anotaciones antiguas y nuevas simultáneas: posible doble conteo; no proponer reserva hasta resolver ambas.');complete=false;}
    if(!complete){pending.push(d.label+': cadena '+side+' no contrastable, no reservar automáticamente.');continue;}
    if(!Number.isInteger(d.row)||!Number.isInteger(d.pos)||!Number.isInteger(a.slots)){
     pending.push(d.label+': falta ubicación para contrastar la cadena '+side+'.');continue;
@@ -144,6 +145,7 @@ function report(a,activeBrand){
    pending.push(label+': intervalo geométrico orientativo '+mm+' mm; longitud exterior de peine '+(item.lengthMm??'desconocida')+' mm. NO acredita conexión ni alineación.');
    if(item.lengthMm!==undefined&&mm>item.lengthMm)
     pending.push(label+': intervalo DIN aproximado '+mm+' mm mayor que longitud física '+item.lengthMm+' mm; revisar paso, extremos, ubicación y dientes, sin concluir aptitud.');
+   if(c.ref==='KDN163A')pending.push(label+': NO atribuir tapas Hager KZN023/KZN024, previstas expresamente para KDN263B/KDN363B/KDN463B, no KDN163A.');
    if(c.ref==='KDN163A'&&c.deviceIds.some(id=>(s.chains?.[id]||[]).length>0||!!a.physicalAccessoryPlans?.[id]))
     issues.push(label+': ficha Hager advierte que KDN163A no es apto para dispositivo con auxiliar; revisar combinación.');
   }
