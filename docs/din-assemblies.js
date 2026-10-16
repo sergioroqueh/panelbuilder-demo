@@ -18,7 +18,7 @@ function valid(a){
  if(!Object.entries(chains).every(([id,entries])=>ids.has(id)&&Array.isArray(entries)&&entries.length>0&&entries.length<=LIMIT_CHAIN
   &&entries.every(e=>plain(e)&&Object.keys(e).every(k=>['brand','ref','side','observedMm','hostIdentity'].includes(k))
     &&get(e.brand,e.ref)?.kind==='auxiliar'&&['left','right'].includes(e.side)
-    &&!(get(e.brand,e.ref).side==='left'&&e.side!=='left')
+    &&!(false /* registros históricos con posición equivocada siguen importables, pero quedan pendientes */)
     &&(e.observedMm===undefined||metric(e.observedMm))
     &&typeof e.hostIdentity==='string'&&e.hostIdentity.length<=600)))return false;
  const spans=new Set();
@@ -36,7 +36,7 @@ function valid(a){
 }
 function addAux(a,id,brand,ref,side,raw,activeBrand){
  if(!(a.devices||[]).some(d=>d.id===id)||get(brand,ref)?.kind!=='auxiliar'||!['left','right'].includes(side)
-   ||get(brand,ref).side==='left'&&side!=='left')return false;
+   ||(get(brand,ref).side==='left'||get(brand,ref).documentedSide==='left')&&side!=='left')return false;
  const s=storage(a),prior=s.chains?.[id]||[];
  if(prior.length>=LIMIT_CHAIN)return false;
  const member={brand,ref,side,hostIdentity:idFor(a,id,activeBrand)};
@@ -87,7 +87,11 @@ function report(a,activeBrand){
     if(!a.apparatusCandidates?.[id]||a.apparatusCandidates[id].fabricante!==m.brand)
       pending.push(label+': no hay candidata documental del anfitrión para esta marca.');
     pending.push(label+': comprobar por SKU, orden de acoplamiento, límites de auxiliares y seguridad.');
-    if(item.side==='unknown')pending.push(label+': lado de montaje no confirmado por ficha individual.');
+    if(item.documentedSide&&m.side!==item.documentedSide){
+      pending.push(label+': lado distinto del catálogo histórico Hager; corregir antes de reservar.');
+      complete=false;
+    }
+    if(item.side==='unknown'&&!item.documentedSide)pending.push(label+': lado de montaje no confirmado por ficha individual.');
     if(m.observedMm!==undefined&&item.widthMm!==null&&m.observedMm<item.widthMm)
       pending.push(label+': medición inferior a ficha; se usa el mínimo de '+item.widthMm+' mm.');
     const w=item.widthMm===null?m.observedMm:(m.observedMm===undefined?item.widthMm:Math.max(item.widthMm,m.observedMm));
@@ -105,8 +109,11 @@ function report(a,activeBrand){
    if(lo<0||hi>a.slots*DIN)issues.push(d.label+': conjunto '+side+' rebasa carril DIN nominal.');
    if(side==='right'){
     const current=a.dinClearancesMm?.[id]??0;
-    if(width>current)reserves.push({id,label:d.label,mm:Math.min(width,300),neededMm:width,existingMm:current,complete:true});
-   }else pending.push(d.label+': conjunto izquierdo con '+width+' mm: el planificador DIN actual solo reserva a la derecha.');
+    if(width>current)reserves.push({id,label:d.label,side:'right',mm:Math.min(width,300),neededMm:width,existingMm:current,complete:true});
+    }else {
+    const current=a.dinLeftClearancesMm?.[id]??0;
+    if(width>current)reserves.push({id,label:d.label,side:'left',mm:Math.min(width,300),neededMm:width,existingMm:current,complete:true});
+   }
   }
   if(a.physicalAccessoryPlans?.[id])pending.push(d.label+': también existe anotación antigua; revisar doble conteo.');
  }
@@ -166,14 +173,14 @@ function render(a,brand,esc){
  const crows=(s.combs||[]).map(c=>'<p class="small-text">'+esc(c.brand+' '+c.ref+' · '+c.id+' → '+c.deviceIds.map(id=>(a.devices||[]).find(d=>d.id===id)?.label||id).join(', '))
   +' <button class="button small" type="button" data-comb-remove="'+esc(c.id)+'">Retirar tramo</button></p>').join('');
  return '<details class="aux-physical-panel" data-assemblies-panel><summary><strong>Conjuntos DIN experimentales · '+r.chains+' auxiliares · '+r.combs+' peines · '+r.issues.length+' conflictos</strong></summary>'
-  +'<p class="tiny-hint">Anota auxiliares en el orden desde el aparato hacia fuera y un tramo de peine marcando EXPLÍCITAMENTE sus dispositivos. No hay asociación comercial aprobada ni conexiones eléctricas reales. Los anchos sin ficha permanecen pendientes.</p>'+rows
+  +'<p class="tiny-hint">Anota auxiliares en el orden desde el aparato hacia fuera y un tramo de peine marcando EXPLÍCITAMENTE sus dispositivos. No hay asociación comercial aprobada ni conexiones eléctricas reales. Los anchos sin ficha permanecen pendientes; montaje lateral y combinaciones sujetos a ficha individual.</p>'+rows
   +'<div class="notice-box" data-comb-editor><strong>Tramo de peine preliminar</strong><label class="form-field">Peine <select data-comb-ref>'+sel(comb)+'</select></label>'
   +'<div class="small-text">'+(a.devices||[]).map(d=>'<label style="display:inline-flex;align-items:center;margin:6px"><input type="checkbox" data-comb-member="'+esc(d.id)+'"> '+esc(d.label)+'</label>').join('')+'</div>'
   +'<button type="button" class="button small" data-comb-add>Registrar tramo de al menos dos equipos</button>'+crows+'</div>'
-  +r.reserves.filter(x=>x.neededMm<=300).map(x=>'<p class="small-text">Reserva derecha propuesta: '+esc(x.label)+' · '+x.neededMm.toFixed(1)+' mm (actual '+x.existingMm+' mm). <button type="button" class="button small" data-assembly-reserve="'+esc(x.id)+'">Confirmar reserva DIN; no recoloca</button></p>').join('')
+  +r.reserves.filter(x=>x.neededMm<=300).map(x=>'<p class="small-text">Reserva '+(x.side==='left'?'izquierda':'derecha')+' propuesta: '+esc(x.label)+' · '+x.neededMm.toFixed(1)+' mm (actual '+x.existingMm+' mm). <button type="button" class="button small" data-assembly-reserve="'+esc(x.id)+'" data-assembly-reserve-side="'+x.side+'">Confirmar reserva DIN; no recoloca</button></p>').join('')
   +r.issues.map(x=>'<p class="notice-line warn">⚠ '+esc(x)+'</p>').join('')
   +r.pending.map(x=>'<p class="tiny-hint">Pendiente: '+esc(x)+'</p>').join('')
-  +'<p class="tiny-hint">Una reserva derecha confirmada se guarda en la cota lateral existente; puede generar solapamientos y requerir redistribución DIN asistida aparte. Propuesta no certificada.</p></details>';
+  +'<p class="tiny-hint">Una reserva confirmada a izquierda o derecha se guarda en la cota lateral correspondiente; puede generar solapamientos y requerir redistribución DIN asistida aparte. Propuesta no certificada.</p></details>';
 }
 function materials(a,esc){
  const s=a.dinAccessoryAssemblies||{},chains=Object.values(s.chains||{}).flat(),combs=s.combs||[];

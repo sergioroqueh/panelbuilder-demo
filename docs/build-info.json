@@ -1,7 +1,7 @@
 {
-  "sha": "d12cfc74cfdb6dd022c333bc6bcdbb4681fbc4ba",
+  "sha": "0a8f5e4358280373e4d7e364c57f25293f13262d",
   "branch": "feat/v0.11-unifilar-tecnico",
   "deployedAt": null,
   "publication": "panelbuilder-demo",
-  "note": "Ronda 11: conjuntos auxiliares y peines documentales, no valida montaje."
+  "note": "Ronda 12: reservas DIN bilaterales con confirmación. Sin conformidad de montaje."
 }

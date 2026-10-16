@@ -1,12 +1,13 @@
 /* PanelBuilder · propuesta reversible de redistribución DIN (no validación eléctrica). */
 (function(root){'use strict';
 const DIN_MM=18; // paso de planificación, no dimensión de fabricante.
-function validClearances(a){
- const map=a?.dinClearancesMm;if(map===undefined)return true;
+function validClearanceMap(a,name){
+ const map=a?.[name];if(map===undefined)return true;
  if(!map||typeof map!=='object'||Array.isArray(map)||Object.keys(map).length>350)return false;
  const ids=new Set((a.devices||[]).map(d=>d.id));
  return Object.entries(map).every(([id,v])=>ids.has(id)&&typeof v==='number'&&Number.isFinite(v)&&v>0&&v<=300);
 }
+function validClearances(a){return validClearanceMap(a,'dinClearancesMm')&&validClearanceMap(a,'dinLeftClearancesMm');}
 function setClearance(a,id,raw){
  if(!(a.devices||[]).some(d=>d.id===id))return false;
  const v=String(raw).trim()===''?0:Number(raw);
@@ -15,8 +16,22 @@ function setClearance(a,id,raw){
  if(v===0)delete a.dinClearancesMm[id];else a.dinClearancesMm[id]=v;
  a.layoutDirty=true;return true;
 }
+function setLeftClearance(a,id,raw){
+ if(!(a.devices||[]).some(d=>d.id===id))return false;
+ const v=String(raw).trim()===''?0:Number(raw);
+ if(!Number.isFinite(v)||v<0||v>300)return false;
+ a.dinLeftClearancesMm={...(a.dinLeftClearancesMm||{})};
+ if(v===0)delete a.dinLeftClearancesMm[id];else a.dinLeftClearancesMm[id]=v;
+ a.layoutDirty=true;return true;
+}
 function extraMm(a,id){return a?.dinClearancesMm?.[id]||0;}
-function footprint(a,d){return Number(d.modules)+Math.ceil(extraMm(a,d.id)/DIN_MM);}
+function leftMm(a,id){return a?.dinLeftClearancesMm?.[id]||0;}
+function leftModules(a,d){return Math.ceil(leftMm(a,d.id)/DIN_MM);}
+function rightModules(a,d){return Math.ceil(extraMm(a,d.id)/DIN_MM);}
+function footprint(a,d){return leftModules(a,d)+Number(d.modules)+rightModules(a,d);}
+function occupied(a,d,row=d.row,pos=d.pos){
+ return {row,start:pos-leftModules(a,d),end:pos+Number(d.modules)+rightModules(a,d)};
+}
 const pinned=(a,id)=>a?.dinLocks?.[id]===true;
 const placed=d=>Number.isInteger(d.row)&&Number.isInteger(d.pos)&&d.row>=0&&d.pos>=0;
 function validLocks(a){
@@ -29,29 +44,34 @@ function toggleLock(a,id){
  const d=(a.devices||[]).find(x=>x.id===id);
  if(!d||!a.rows||!a.slots||!placed(d)||d.row>=a.rows||d.pos+d.modules>a.slots)return false;
  if(pinned(a,id)){delete a.dinLocks[id];return true;}
+ const target=occupied(a,d);
+ if(target.start<0||target.end>a.slots)return false;
  if((a.devices||[]).some(x=>x.id!==id&&pinned(a,x.id)&&x.row===d.row&&
-  x.pos<d.pos+d.modules&&d.pos<x.pos+x.modules))return false;
+  occupied(a,x).start<target.end&&target.start<occupied(a,x).end))return false;
  a.dinLocks={...(a.dinLocks||{}),[id]:true};return true;
 }
-function signature(a){return JSON.stringify([a.rows,a.slots,(a.devices||[]).map(d=>[d.id,d.modules,d.row,d.pos]),Object.keys(a.dinLocks||{}).filter(id=>pinned(a,id)).sort(),Object.entries(a.dinClearancesMm||{}).sort((x,y)=>x[0].localeCompare(y[0])),a.reserve]);}
+function signature(a){return JSON.stringify([a.rows,a.slots,(a.devices||[]).map(d=>[d.id,d.modules,d.row,d.pos]),Object.keys(a.dinLocks||{}).filter(id=>pinned(a,id)).sort(),Object.entries(a.dinClearancesMm||{}).sort((x,y)=>x[0].localeCompare(y[0])),Object.entries(a.dinLeftClearancesMm||{}).sort((x,y)=>x[0].localeCompare(y[0])),a.reserve]);}
 function audit(a){
  const problems=[],seen=[],rows=Number(a.rows)||0,slots=Number(a.slots)||0;
  for(const d of a.devices||[]){
-  const w=Number(d.modules),effective=footprint(a,d),r=d.row,p=d.pos;
+  const w=Number(d.modules),effective=footprint(a,d),r=d.row,p=d.pos,interval=occupied(a,d);
   if(!Number.isInteger(w)||w<1||w>48){problems.push({code:'width',ids:[d.id],text:d.label+': ocupación inválida.'});continue;}
   if(r===null||r===undefined||p===null||p===undefined){problems.push({code:'unplaced',ids:[d.id],text:d.label+': sin posición.'});continue;}
-  if(!Number.isInteger(r)||!Number.isInteger(p)||r<0||p<0||r>=rows||p+effective>slots){problems.push({code:'overflow',ids:[d.id],text:d.label+': excede el carril (aparato y reserva lateral declarada).'});continue;}
-  for(const other of seen)if(other.r===r&&p<other.p+other.effective&&other.p<p+effective)problems.push({code:'overlap',ids:[d.id,other.id],text:'Solapamiento DIN o reserva lateral: '+other.label+' y '+d.label+' (carril '+(r+1)+').'});
-  seen.push({id:d.id,label:d.label,r,p,w,effective});
+  if(!Number.isInteger(r)||!Number.isInteger(p)||r<0||p<0||r>=rows||interval.start<0||interval.end>slots){problems.push({code:'overflow',ids:[d.id],text:d.label+': excede el carril (aparato y reserva lateral declarada).'});continue;}
+  for(const other of seen)if(other.r===r&&interval.start<other.end&&other.start<interval.end)problems.push({code:'overlap',ids:[d.id,other.id],text:'Solapamiento DIN o reserva lateral: '+other.label+' y '+d.label+' (carril '+(r+1)+').'});
+  seen.push({id:d.id,label:d.label,r,start:interval.start,end:interval.end});
  }
  return {problems,clear:problems.length===0,dirty:!!a.layoutDirty,reviewNeeded:!!a.layoutDirty||problems.length>0};
 }
 function pack(a,rows,slots){
  const devices=a.devices||[],grid=Array.from({length:rows},()=>Array(slots).fill(null)),positions={};
- const can=(r,p,w)=>r>=0&&r<rows&&p>=0&&p+w<=slots&&grid[r].slice(p,p+w).every(v=>v===null);
- const put=(d,r,p)=>{positions[d.id]={row:r,pos:p};for(let k=p;k<p+footprint(a,d);k++)grid[r][k]=d.id;};
+ const can=(r,p,d)=>{
+  const {start,end}=occupied(a,d,r,p);
+  return r>=0&&r<rows&&start>=0&&end<=slots&&grid[r].slice(start,end).every(v=>v===null);
+ };
+ const put=(d,r,p)=>{positions[d.id]={row:r,pos:p};const {start,end}=occupied(a,d,r,p);for(let k=start;k<end;k++)grid[r][k]=d.id;};
  for(const d of devices.filter(d=>pinned(a,d.id))){
-  if(!placed(d)||!can(d.row,d.pos,footprint(a,d)))return null;
+  if(!placed(d)||!can(d.row,d.pos,d))return null;
   put(d,d.row,d.pos);
  }
  const free=devices.map((d,i)=>({d,i})).filter(x=>!pinned(a,x.d.id)).sort((x,y)=>{
@@ -59,16 +79,16 @@ function pack(a,rows,slots){
   return Number(py)-Number(px)||(px?x.d.row-y.d.row||x.d.pos-y.d.pos:0)||x.i-y.i;
  });
  // Conservar TODAS las ubicaciones válidas antes de recolocar las conflictivas.
- for(const {d}of free)if(placed(d)&&can(d.row,d.pos,footprint(a,d)))put(d,d.row,d.pos);
+ for(const {d}of free)if(placed(d)&&can(d.row,d.pos,d))put(d,d.row,d.pos);
  for(const {d}of free){
   if(positions[d.id])continue;
-  const w=footprint(a,d);if(w>slots)return null;
-  const r0=placed(d)&&d.row<rows?d.row:0,p0=placed(d)?Math.min(d.pos,slots-w):0;
+  const w=footprint(a,d),left=leftModules(a,d),right=rightModules(a,d);if(w>slots)return null;
+  const r0=placed(d)&&d.row<rows?d.row:0,p0=placed(d)?Math.max(left,Math.min(d.pos,slots-Number(d.modules)-right)):left;
   const options=[];
-  for(let r=0;r<rows;r++)for(let p=0;p<=slots-w;p++)
+  for(let r=0;r<rows;r++)for(let p=left;p<=slots-Number(d.modules)-right;p++)
    options.push([r,p,Math.abs(r-r0)*1000+Math.abs(p-p0)*2+(p<p0?1:0)]);
   options.sort((x,y)=>x[2]-y[2]||x[0]-y[0]||x[1]-y[1]);
-  const found=options.find(([r,p])=>can(r,p,w));
+  const found=options.find(([r,p])=>can(r,p,d));
   if(!found)return null;
   put(d,found[0],found[1]);
  }
@@ -99,7 +119,7 @@ function plan(a){
 }
 function apply(a,p){
  if(!p?.ok||signature(a)!==p.signature||a.devices.some(d=>!p.positions?.[d.id]||pinned(a,d.id)&&(d.row!==p.positions[d.id].row||d.pos!==p.positions[d.id].pos)))return false;
- const trial={rows:p.rows,slots:p.slots,dinClearancesMm:a.dinClearancesMm,devices:a.devices.map(d=>({...d,...p.positions[d.id]}))};
+ const trial={rows:p.rows,slots:p.slots,dinClearancesMm:a.dinClearancesMm,dinLeftClearancesMm:a.dinLeftClearancesMm,devices:a.devices.map(d=>({...d,...p.positions[d.id]}))};
  if(trial.devices.some(d=>!p.positions[d.id])||!audit(trial).clear)return false;
  const formatChanged=a.rows!==p.rows||a.slots!==p.slots;
  a.rows=p.rows;a.slots=p.slots;a.devices.forEach(d=>{d.row=p.positions[d.id].row;d.pos=p.positions[d.id].pos;});a.layoutDirty=false;
@@ -112,18 +132,20 @@ function mmReport(a,resolve){
  const clear=measurement.clearWidth??null,height=measurement.clearHeight??null,depth=measurement.innerDepthMm??null;
  let known=0,estimated=0,reserved=0,knownVolume=0;
  for(let r=0;r<(Number(a.rows)||0);r++){
-  let extent=0,nominalEnd=0;
+  let extent=0,nominalEnd=0,nominalStart=Infinity;
   const ds=(a.devices||[]).filter(d=>d.row===r&&Number.isInteger(d.pos)&&d.pos>=0),physical=[];
   for(const d of ds){
    const match=typeof resolve==='function'?resolve(d):null;
    const width=match?.widthMm;
    const verified=match?.status==='dimension_confirmada_usuario'&&typeof width==='number'&&Number.isFinite(width)&&width>0;
    verified?known++:estimated++;
-   const w=verified?width:Number(d.modules)*DIN_MM,extra=extraMm(a,d.id);
-   const start=d.pos*DIN_MM,requiredEnd=start+w+extra;
-   const reservationEnd=(d.pos+footprint(a,d))*DIN_MM;
-   if(extra>0)reserved++;
-   extent=Math.max(extent,requiredEnd);nominalEnd=Math.max(nominalEnd,reservationEnd);
+   const w=verified?width:Number(d.modules)*DIN_MM,extra=extraMm(a,d.id),left=leftMm(a,d.id);
+   const start=d.pos*DIN_MM,requiredStart=start-left,requiredEnd=start+w+extra;
+   const reservationStart=(d.pos-leftModules(a,d))*DIN_MM;
+   const reservationEnd=(d.pos+Number(d.modules)+rightModules(a,d))*DIN_MM;
+   if(extra>0||left>0)reserved++;
+   extent=Math.max(extent,requiredEnd);nominalEnd=Math.max(nominalEnd,reservationEnd);nominalStart=Math.min(nominalStart,reservationStart);
+   if(requiredStart<reservationStart-0.01)issues.push(d.label+': reserva izquierda insuficiente para la huella declarada.');
    if(w>Number(d.modules)*DIN_MM+0.01)issues.push(d.label+': anchura comercial superior a la reserva modular.');
    if(requiredEnd>reservationEnd+0.01)issues.push(d.label+': anchura y reserva lateral superan los módulos apartados.');
    const h=verified&&Number.isFinite(match.heightMm)&&match.heightMm>0?match.heightMm:null;
@@ -132,17 +154,19 @@ function mmReport(a,resolve){
    if(h!==null&&height!==null&&h>height+0.01)issues.push(d.label+': altura de ficha '+h+' mm supera altura interior libre '+height+' mm.');
    if(z!==null&&depth!==null&&z>depth+0.01)issues.push(d.label+': profundidad de ficha '+z+' mm supera fondo interior declarado '+depth+' mm.');
    physical.push({id:d.id,label:d.label,startMm:start,widthMm:w,heightMm:h,depthMm:z,
-    source:verified?'documentada_confirmada':'estimada',reservedMm:extra,reservationEndMm:reservationEnd});
+    source:verified?'documentada_confirmada':'estimada',reservedMm:extra,reservedLeftMm:left,reservationStartMm:reservationStart,reservationEndMm:reservationEnd});
   }
   for(let i=0;i<physical.length;i++)for(let j=i+1;j<physical.length;j++){
-   const x=physical[i],y=physical[j],endX=x.startMm+x.widthMm+x.reservedMm,endY=y.startMm+y.widthMm+y.reservedMm;
-   if(x.startMm<endY-0.01&&y.startMm<endX-0.01)
+   const x=physical[i],y=physical[j],startX=x.startMm-x.reservedLeftMm,startY=y.startMm-y.reservedLeftMm;
+   const endX=x.startMm+x.widthMm+x.reservedMm,endY=y.startMm+y.widthMm+y.reservedMm;
+   if(startX<endY-0.01&&startY<endX-0.01)
     issues.push('Carril '+(r+1)+': interferencia horizontal en mm entre '+x.label+' y '+y.label+'.');
   }
+  if(nominalStart<-0.01)issues.push('Carril '+(r+1)+': reserva izquierda fuera del inicio nominal.');
   const rail=construction[r]?.lengthMm??null;
   if(rail!==null&&nominalEnd>rail+0.01)issues.push('Carril '+(r+1)+': reserva '+nominalEnd.toFixed(1)+' mm mayor que longitud declarada '+rail+' mm.');
   if(clear!==null&&nominalEnd>clear+0.01)issues.push('Carril '+(r+1)+': reserva '+nominalEnd.toFixed(1)+' mm mayor que anchura libre '+clear+' mm.');
-  rows.push({row:r,extentMm:extent,reservationEndMm:nominalEnd,railMm:rail,count:ds.length,devices:physical});
+  rows.push({row:r,extentMm:extent,reservationStartMm:Number.isFinite(nominalStart)?nominalStart:null,reservationEndMm:nominalEnd,railMm:rail,count:ds.length,devices:physical});
  }
  return {rows,issues,known,estimated,reserved,knownVolume,
   pendingDepth:depth===null,pendingHeight:height===null};
@@ -151,7 +175,7 @@ function render(a,open,esc,resolve){
  const status=audit(a);
  if(!(Number(a.rows)>0))return '';
  const mm=mmReport(a,resolve);
- const summary='<section class="aux-physical-panel" data-din-mm="true"><div class="aux-physical-head"><strong>Comprobación horizontal DIN en mm</strong></div><p class="small-text">'+mm.known+' anchura(s) documentadas y confirmadas · '+mm.estimated+' estimadas · '+mm.reserved+' reservas laterales declaradas · '+mm.knownVolume+' fichas con alto y fondo. Paso DIN de planificación: 18 mm, NO montaje certificado.</p>'+mm.rows.filter(r=>r.count).map(r=>'<p class="small-text">Carril '+(r.row+1)+': ocupación ≈ '+r.extentMm.toFixed(1)+' mm; reserva modular '+r.reservationEndMm.toFixed(1)+' mm'+(r.railMm!==null?' / carril declarado '+r.railMm+' mm':' (longitud sin declarar)')+'</p>').join('')+(mm.pendingDepth?'<p class="tiny-hint">Profundidad interior sin declarar: contrastar en Detalle constructivo.</p>':'')+mm.issues.map(x=>'<p class="pending-check">⚠ '+esc(x)+'</p>').join('')+'<details class="din-dimensions-details"><summary>Cotas de cada equipo por carril</summary>'+mm.rows.flatMap(r=>r.devices).map(d=>'<p class="small-text">'+esc(d.label)+': '+d.widthMm+' mm ancho'+(d.heightMm===null?'':', '+d.heightMm+' mm alto')+(d.depthMm===null?'':', '+d.depthMm+' mm fondo')+' · '+(d.source==='documentada_confirmada'?'ficha confirmada':'estimado')+(d.reservedMm?' · reserva derecha '+d.reservedMm+' mm':'')+'</p>').join('')+'</details>'+ '<p class="tiny-hint">'+Object.keys(a.dinLocks||{}).length+' posición(es) fijada(s). Las reservas introducidas se redondean a módulos completos; una separación no declarada sigue PENDIENTE. No se han verificado peines, ventilación ni cableado.</p></section>';
+ const summary='<section class="aux-physical-panel" data-din-mm="true"><div class="aux-physical-head"><strong>Comprobación horizontal DIN en mm</strong></div><p class="small-text">'+mm.known+' anchura(s) documentadas y confirmadas · '+mm.estimated+' estimadas · '+mm.reserved+' reservas laterales declaradas · '+mm.knownVolume+' fichas con alto y fondo. Paso DIN de planificación: 18 mm, NO montaje certificado.</p>'+mm.rows.filter(r=>r.count).map(r=>'<p class="small-text">Carril '+(r.row+1)+': ocupación ≈ '+r.extentMm.toFixed(1)+' mm; reserva modular '+r.reservationEndMm.toFixed(1)+' mm'+(r.railMm!==null?' / carril declarado '+r.railMm+' mm':' (longitud sin declarar)')+'</p>').join('')+(mm.pendingDepth?'<p class="tiny-hint">Profundidad interior sin declarar: contrastar en Detalle constructivo.</p>':'')+mm.issues.map(x=>'<p class="pending-check">⚠ '+esc(x)+'</p>').join('')+'<details class="din-dimensions-details"><summary>Cotas de cada equipo por carril</summary>'+mm.rows.flatMap(r=>r.devices).map(d=>'<p class="small-text">'+esc(d.label)+': '+d.widthMm+' mm ancho'+(d.heightMm===null?'':', '+d.heightMm+' mm alto')+(d.depthMm===null?'':', '+d.depthMm+' mm fondo')+' · '+(d.source==='documentada_confirmada'?'ficha confirmada':'estimado')+(d.reservedLeftMm?' · reserva izquierda '+d.reservedLeftMm+' mm':'')+(d.reservedMm?' · reserva derecha '+d.reservedMm+' mm':'')+'</p>').join('')+'</details>'+ '<p class="tiny-hint">'+Object.keys(a.dinLocks||{}).length+' posición(es) fijada(s). Las reservas introducidas se redondean a módulos completos; una separación no declarada sigue PENDIENTE. No se han verificado peines, ventilación ni cableado.</p></section>';
  if(!status.reviewNeeded)return summary;
  let html='<section class="aux-physical-panel" data-din-review="true" aria-label="Redistribución DIN asistida">'+
  '<div class="aux-physical-head"><strong>⚠ Revisión de colocación DIN</strong></div>'+
@@ -172,5 +196,5 @@ function render(a,open,esc,resolve){
  }
  return summary+html+'<p class="tiny-hint">Propuesta de módulos y carriles, con paso modular de referencia. NO cambia los datos eléctricos genéricos, las candidaturas, los precios ni valida dimensiones interiores, térmica o accesorios.</p></section>';
 }
-root.PanelDINReflow=Object.freeze({signature,audit,plan,apply,render,mmReport,validLocks,validClearances,setClearance,toggleLock,pinned,footprint});
+root.PanelDINReflow=Object.freeze({signature,audit,plan,apply,render,mmReport,validLocks,validClearances,setClearance,setLeftClearance,toggleLock,pinned,footprint,leftModules,occupied});
 })(window);

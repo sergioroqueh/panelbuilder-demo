@@ -8,10 +8,10 @@ const items=Object.freeze([
   family:'iC60 / Acti9 (compatibilidad de familia, no conjunto completo)',
   source:'https://www.se.com/es/es/product/A9A26904/acti9-iof-contacto-auxiliar-100ma-to-6a-acdc/',
   detail:'Acoplamiento por clip a la izquierda según fabricante. Anchura instalada y combinaciones de auxiliares pendientes.'},
- {brand:'Hager',ref:'MZ201',kind:'auxiliar',name:'Contacto auxiliar 1NA+1NC, series M/N/HM/ML',side:'unknown',widthMm:9.5,modules:0.5,
+ {brand:'Hager',ref:'MZ201',kind:'auxiliar',name:'Contacto auxiliar 1NA+1NC, series M/N/HM/ML',side:'unknown',documentedSide:'left',widthMm:9.5,modules:0.5,
   family:'M / N / HM / ML, exclusivamente según ficha Hager',
   source:'https://hager.com/es/catalogo/producto/mz201-contacto-auxiliar-1na-1nc-5a',
-  detail:'Anchura de producto 9,50 mm y ocupación nominal 0,5 M, que NO equivale a 9 mm libres. Posición lateral y SKU anfitrión sin comprobar.'},
+  detail:'Anchura de producto 9,50 mm y ocupación nominal 0,5 M, que NO equivale a 9 mm libres. Un catálogo oficial Hager (edición histórica, p. 4.28) indica montaje lateral izquierdo; contrastar siempre SKU anfitrión y revisión vigente.'},
  {brand:'Schneider',ref:'A9XPH112',kind:'peine',name:'Peine 1P, 12 módulos de 18 mm',side:'comb',widthMm:null,modules:null,
   family:'K60N/C60/ID descritos por fabricante; verificar referencia del dispositivo, borne y régimen',
   source:'https://www.se.com/es/es/product/A9XPH112/peine-unipolar-24-pasos-k60n-c60-id/',
@@ -68,6 +68,7 @@ function report(a,brand){
   else if(item.kind==='peine'){pending.push(label+': falta verificar esquema de alimentación, tipo de borne, polos, dientes, tapa y conjunto.');}
   if(item.kind==='peine'){pending.push(label+': longitud 12 M NOMINAL; no se ha reservado huella ni verificado fijación.');continue;}
   if(p.side==='unknown'){pending.push(label+': posición/acoplamiento lateral sin documento verificable.');continue;}
+  if(item.documentedSide&&p.side!==item.documentedSide){pending.push(label+': lado '+p.side+' contradictorio con catálogo Hager ('+item.documentedSide+'); registro legado conservado, cotejo solo orientativo y requiere corregir.');}
   const width=item.widthMm===null?p.observedMm:(p.observedMm===undefined?item.widthMm:Math.max(item.widthMm,p.observedMm));
   if(item.widthMm!==null&&p.observedMm!==undefined&&p.observedMm<item.widthMm)pending.push(label+': medición manual inferior a '+item.widthMm+' mm de ficha; se usa el mínimo documental.');
   if(width===null||width===undefined){pending.push(label+': anchura montada pendiente, no se ha reservado ningún hueco.');continue;}
