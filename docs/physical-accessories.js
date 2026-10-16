@@ -16,10 +16,10 @@ const items=Object.freeze([
   family:'K60N/C60/ID descritos por fabricante; verificar referencia del dispositivo, borne y régimen',
   source:'https://www.se.com/es/es/product/A9XPH112/peine-unipolar-24-pasos-k60n-c60-id/',
   detail:'12 módulos es longitud nominal de catálogo, NO longitud física útil acreditada. Faltan dientes, corte, tapas, alimentación y disposición exacta.'},
- {brand:'Hager',ref:'KDN163A',kind:'peine',name:'Peine de horquilla 1P, 63 A, 12 M',side:'comb',widthMm:null,modules:null,
+ {brand:'Hager',ref:'KDN163A',kind:'peine',name:'Peine de horquilla 1P, 63 A, 12 M',side:'comb',widthMm:null,modules:null,lengthMm:210,
   family:'Compatibilidad con SKU anfitrión aún sin evidencia individual',
   source:'https://hager.com/intl-en/catalogue/information/kdn163a-insulated-busbar-1p-fork-10mm2-12m',
-  detail:'Peine 1P de horquilla 10 mm², 12 módulos nominales. No inferir compatibilidad de bornes, corriente del conjunto ni cotas de montaje.'}
+  detail:'Peine de horquilla de 10 mm², longitud exterior 210 mm según ficha oficial Hager. 12 módulos nominales: no equiparar a 216 mm de ocupación montada ni inferir dientes, aptitud para aparatos/auxiliares o distancia útil.'}
 ]);
 const byKey=(brand,ref)=>items.find(i=>i.brand===brand&&i.ref===ref);
 const mm=n=>typeof n==='number'&&Number.isFinite(n)&&n>=0&&n<=300;
