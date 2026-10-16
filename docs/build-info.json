@@ -1,7 +1,7 @@
 {
-  "sha": "9dc471aeefd657dda06e93eae45db5ab739208b7",
+  "sha": "d1872e87321221d6822e0ebbd826278dd6de07e9",
   "branch": "feat/v0.11-unifilar-tecnico",
   "publication": "panelbuilder-demo",
-  "note": "Ronda 13: lote 13 SKU fabricante; cotas por referencia sin certificación ni PVP auto.",
+  "note": "Ronda 14: 10 nuevos SKU Hager/Legrand, enlaces de anfitrión exacto, sin montaje aprobado ni PVP",
   "deployedAt": null
 }

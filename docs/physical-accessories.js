@@ -21,6 +21,10 @@ const items=Object.freeze([
    detail:'Anchura exterior '+doc.widthMm+' mm, ficha del SKU. '+doc.unknown+
      '. No implica combinación aprobada ni que deba elegirse automáticamente.'};
  }),
+  ...root.PanelManufacturerHosts.combs.map(b=>({brand:b.brand,ref:b.ref,kind:'peine',
+  name:b.name,side:'comb',widthMm:null,modules:null,lengthMm:b.lengthMm,
+  family:'Peine Hager: no se presume compatibilidad SKU ni número de dientes por longitud.',
+  source:b.source,detail:b.note})),
   {brand:'Schneider',ref:'A9XPH112',kind:'peine',name:'Peine 1P, 12 módulos de 18 mm',side:'comb',widthMm:null,modules:null,
   family:'K60N/C60/ID descritos por fabricante; verificar referencia del dispositivo, borne y régimen',
   source:'https://www.se.com/es/es/product/A9XPH112/peine-unipolar-24-pasos-k60n-c60-id/',
@@ -75,7 +79,7 @@ function report(a,brand){
    pending.push(label+': relación iC60 exacta no acreditada para esta referencia anfitriona.');
   }else if(item.ref==='MZ201'){pending.push(label+': series M/N/HM/ML documentadas; verificar SKU concreto y acoplamiento.');}
   else if(item.kind==='peine'){pending.push(label+': falta verificar esquema de alimentación, tipo de borne, polos, dientes, tapa y conjunto.');}
-  if(item.kind==='peine'){pending.push(label+': longitud 12 M NOMINAL; no se ha reservado huella ni verificado fijación.');continue;}
+  if(item.kind==='peine'){pending.push(label+': '+(root.PanelManufacturerHosts.findComb(item.brand,item.ref)?'longitud exterior '+item.lengthMm+' mm, módulos nominales del SKU sin prueba de dientes/conexiones.':'longitud 12 M NOMINAL; no se ha reservado huella ni verificado fijación.')+' Sin reserva DIN ni montaje aprobado.');continue;}
   if(p.side==='unknown'){pending.push(label+': posición/acoplamiento lateral sin documento verificable.');continue;}
   if(item.documentedSide&&p.side!==item.documentedSide){pending.push(label+': lado '+p.side+' contradictorio con catálogo Hager ('+item.documentedSide+'); registro legado conservado, cotejo solo orientativo y requiere corregir.');}
   const width=item.widthMm===null?p.observedMm:(p.observedMm===undefined?item.widthMm:Math.max(item.widthMm,p.observedMm));
