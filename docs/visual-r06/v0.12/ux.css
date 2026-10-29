@@ -1,0 +1,175 @@
+/* PanelBuilder v0.12 R01. Reversible: solo se aplica con body.ux-v012. */
+body.ux-v012{background:#f5f7fa;color:#203149}
+body.ux-v012 .topbar{height:68px;padding:0 clamp(16px,3vw,38px);gap:14px;border-bottom:1px solid #dce5ef}
+body.ux-v012 .topbar>.divider-vertical,body.ux-v012 .topbar>.project-identity,body.ux-v012 .top-actions{display:none}
+body.ux-v012 .topbar .brand{font-size:22px}
+body.ux-v012 .app-shell,body.ux-v012.view-budget .app-shell,body.ux-v012.canvas-focus .app-shell{display:grid;grid-template-columns:minmax(0,1fr)!important;min-height:calc(100vh - 68px)}
+body.ux-v012 .left-panel,body.ux-v012 .right-panel,body.ux-v012.canvas-focus.inspector-visible .right-panel{display:none!important}
+body.ux-v012 .workspace,body.ux-v012.canvas-focus .workspace{width:100%;max-width:1800px;margin:0 auto;padding:20px clamp(14px,3vw,44px) 48px}
+body.ux-v012 .workspace-tabs,body.ux-v012 #workflowBanner,body.ux-v012 #summary{display:none!important}
+body.ux-v012.view-unifilar #actionBar,body.ux-v012.view-unifilar #workflowAssistant,
+body.ux-v012.view-unifilar #enclosureChoices{display:none!important}
+body.ux-v012 .page-intro{margin:0 0 14px}
+body.ux-v012 .page-intro h1{font-size:23px;letter-spacing:-.55px}
+body.ux-v012 .page-intro .eyebrow{display:none}
+body.ux-v012 .page-intro p{font-size:12px}
+body.ux-v012 .editor-grid,body.ux-v012 .editor-grid.single{grid-template-columns:minmax(0,1fr)!important}
+body.ux-v012 .work-card{border-radius:14px;border:1px solid #dde6f0;box-shadow:0 5px 22px #233e5c0a}
+body.ux-v012.view-unifilar .diagram-viewport{height:clamp(570px,calc(100vh - 300px),1300px)}
+body.ux-v012.view-unifilar .schematic-header-actions>*{display:none!important}
+body.ux-v012.view-unifilar .schematic-header-actions [data-action="proposePhysical"],
+body.ux-v012.view-unifilar .schematic-header-actions [data-action="fitDiagram"],
+body.ux-v012.view-unifilar .schematic-header-actions [data-action="zoomIn"],
+body.ux-v012.view-unifilar .schematic-header-actions [data-action="zoomOut"],
+body.ux-v012.view-unifilar .schematic-header-actions [data-action="exportSchematic"]{display:inline-flex!important}
+body.ux-v012.view-unifilar .schematic-header-actions{flex-wrap:wrap;justify-content:end}
+body.ux-v012.view-unifilar .canvas-quick-add{display:none!important}
+body.ux-v012.view-unifilar .busbar-manager{margin-top:10px}
+body.ux-v012.view-unifilar .node-caption{font-size:11px}
+body.ux-v012 #responsibilityBanner{font-size:11px;margin-bottom:12px}
+body.ux-v012 #noticePanel{margin-top:12px}
+.pb12-nav{display:flex;align-items:center;gap:6px;margin-left:auto;z-index:25}
+.pb12-nav>button,.pb12-menu-wrap>button{appearance:none;border:1px solid transparent;border-radius:9px;background:transparent;color:#42536a;font-size:13px;font-weight:700;padding:11px 15px;white-space:nowrap}
+.pb12-nav>button:hover,.pb12-menu-wrap>button:hover,.pb12-nav>button.active{color:#1359a8;background:#ecf3fd}
+.pb12-nav>button.active{border-color:#d6e5f8}
+.pb12-menu-wrap{position:relative}
+.pb12-menu-wrap>button{border-color:#d7e1ec;background:#fff}
+.pb12-menu{position:absolute;right:0;top:calc(100% + 11px);width:min(340px,90vw);max-height:calc(100vh - 95px);overflow-y:auto;background:#fff;border:1px solid #dbe5f0;box-shadow:0 20px 65px #1e355533;border-radius:13px;padding:10px;z-index:90}
+.pb12-menu>button,.pb12-menu>a{display:block;width:100%;background:none;border:0;color:#334c6b;text-decoration:none;border-radius:8px;text-align:left;font-size:13px;font-weight:650;padding:10px 12px;white-space:normal}
+.pb12-menu>button:hover,.pb12-menu>a:hover{background:#f1f6fc}
+.pb12-menu label{display:block;margin:11px 6px 5px;font-size:11px;font-weight:700;color:#687d96}
+.pb12-menu #alternativeSelect,.pb12-menu #brandSelect{width:100%}
+.pb12-menu #duplicateBtn,.pb12-menu #openBrandReview{width:100%;margin:7px 0 0;white-space:normal}
+.pb12-menu-separator{border-top:1px solid #e5edf5;margin:9px 2px}
+.pb12-toolbar{position:relative;display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:11px 14px;background:#fff;border:1px solid #dde6f0;border-radius:12px;margin-bottom:12px}
+.pb12-toolbar>strong{font-size:11px;color:#647892;margin-right:8px}
+.pb12-toolbar>button{background:#f8fbff;border:1px solid #d8e4f2;border-radius:8px;color:#2b557e;font-size:12px;font-weight:730;padding:10px 12px}
+.pb12-toolbar>button:hover{background:#eaf3ff;border-color:#9abdea}
+body.ux-v012:not(.view-unifilar) #pb12-toolbar{display:none}
+.pb12-library{position:absolute;top:calc(100% + 7px);right:0;width:min(410px,93vw);background:#fff;box-shadow:0 18px 55px #26395333;border:1px solid #d9e3ee;border-radius:14px;padding:16px;z-index:55}
+.pb12-library label{display:block;font-size:11px;font-weight:800;color:#59738e;margin-bottom:8px}
+.pb12-library input{width:100%;padding:12px;border-radius:8px;border:1px solid #cddbe9;background:#fbfdff}
+.pb12-library-items{display:grid;gap:4px;max-height:270px;overflow-y:auto;margin-top:10px}
+.pb12-family{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:#7b8ba0;font-weight:800;margin:12px 0 3px}
+.pb12-library-items button{display:block;width:100%;border:0;background:#f7f9fc;color:#2b4768;border-radius:7px;text-align:left;padding:10px;font-weight:700;font-size:12px}
+.pb12-library-items button:hover{background:#e9f3ff}
+.pb12-pending,.pb12-library #pb12-empty{font-size:11px;line-height:1.6;color:#73869b;margin:12px 1px 0}
+.pb12-home{position:fixed;inset:0;z-index:100;background:radial-gradient(ellipse at 80% 0,#e0edff,transparent 45%),#f6f8fc;overflow-y:auto}
+.pb12-home-inner{width:min(1120px,calc(100% - 40px));margin:0 auto;padding:30px 0}
+.pb12-home-top{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.pb12-home-top strong{font-size:22px;color:#162e52;letter-spacing:-.7px}
+.pb12-home-top strong span{font-size:11px;font-weight:650;color:#5c7797;letter-spacing:0;margin-left:9px}
+.pb12-home-top button{background:#fff;border:1px solid #cddbec;color:#305a85;padding:11px 16px;border-radius:9px;font-weight:750;font-size:12px}
+.pb12-home-intro{margin:10vh 0 38px;max-width:780px}
+.pb12-home-intro>p:first-child{color:#2467bc;font-size:11px;font-weight:850;letter-spacing:1.6px}
+.pb12-home-intro h1{font-size:clamp(32px,4vw,58px);letter-spacing:-2px;line-height:1.1;color:#182d48;margin:12px 0 17px}
+.pb12-home-intro>p:last-child{font-size:16px;color:#637891;line-height:1.6}
+.pb12-cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+.pb12-cards button{min-height:215px;border:1px solid #dbe5f0;border-radius:16px;padding:21px 19px;background:#fff;display:flex;flex-direction:column;align-items:flex-start;gap:11px;text-align:left;color:#1e3654;box-shadow:0 9px 30px #203c5d0b;transition:transform .16s,border-color .16s,box-shadow .16s}
+.pb12-cards button:hover{transform:translateY(-4px);border-color:#7faee9;box-shadow:0 17px 45px #203c5d16}
+.pb12-cards button>span{font-size:24px;background:#e8f2ff;color:#2770c9;display:grid;place-items:center;width:45px;height:45px;border-radius:12px}
+.pb12-cards strong{font-size:15px;line-height:1.25}
+.pb12-cards small{color:#728399;line-height:1.55;font-size:12px}
+.pb12-cards em{font-style:normal;font-size:22px;color:#2470c6;margin-top:auto}
+.pb12-home footer{margin:38px 0;text-align:center;color:#7c8b9c;font-size:11px;line-height:1.5}
+.pb12-context{position:fixed;z-index:86;min-width:240px;max-width:90vw;padding:7px;background:white;border:1px solid #d4e1ee;box-shadow:0 14px 45px #192b4640;border-radius:11px}
+.pb12-context button{display:block;width:100%;border:0;background:#fff;border-radius:7px;padding:10px 12px;text-align:left;font-size:12px;color:#354d69}
+.pb12-context button:hover{background:#ebf3fd}
+#pb12-menu[hidden],#pb12-library[hidden],#pb12-home[hidden],#pb12-context[hidden],#pb12-empty[hidden],.pb12-family[hidden],.pb12-library-items [hidden]{display:none!important}
+@media(max-width:1050px){.pb12-cards{grid-template-columns:repeat(2,minmax(0,1fr))}.pb12-nav>button{font-size:12px;padding:9px 10px}}
+@media(max-width:700px){body.ux-v012 .topbar{height:auto;min-height:65px;flex-wrap:wrap;padding:10px 12px}.pb12-nav{width:100%;margin:0;justify-content:space-between;gap:2px}.pb12-nav>button,.pb12-menu-wrap>button{font-size:11px;padding:9px 6px}.pb12-home-intro{margin:55px 0 25px}.pb12-cards{grid-template-columns:1fr;gap:10px}.pb12-cards button{min-height:145px;padding:15px}.pb12-cards button>span{width:35px;height:35px;font-size:20px}.pb12-home-top strong span{display:block;margin:5px 0 0}.pb12-home-inner{width:calc(100% - 26px)}body.ux-v012.view-unifilar .diagram-viewport{height:60vh}body.ux-v012 .page-intro{flex-wrap:wrap}}
+
+
+/* R02: ancla "Más" al botón en lugar del extremo del editor. */
+body.ux-v012 .pb12-library-anchor{position:relative;display:inline-flex}
+body.ux-v012 .pb12-library-anchor>button{background:#f8fbff;border:1px solid #d8e4f2;border-radius:8px;color:#2b557e;font-size:12px;font-weight:730;padding:10px 12px}
+body.ux-v012 .pb12-library-anchor>button:hover{background:#eaf3ff}
+body.ux-v012 .pb12-library{top:calc(100% + 9px);left:0;right:auto}
+@media(max-width:680px){body.ux-v012 .pb12-library{left:auto;right:0;max-width:calc(100vw - 26px)}}
+
+/* R02: la vista física antepone el cuadro a los formularios auxiliares. */
+body.ux-v012.view-unifilar #pb12-physical-lead,
+body.ux-v012.view-unifilar #pb12-physical-options,
+body.ux-v012:not(.view-physical) #pb12-physical-lead,
+body.ux-v012:not(.view-physical) #pb12-physical-options{display:none!important}
+body.ux-v012.view-physical #workflowAssistant,
+body.ux-v012.view-physical #summary{display:none!important}
+body.ux-v012.view-physical #pb12-physical-lead{display:flex;align-items:center;justify-content:space-between;gap:15px;border:1px solid #d6e4f2;background:#fff;padding:13px 18px;border-radius:12px;margin-bottom:12px}
+body.ux-v012 #pb12-physical-lead>div{display:grid;gap:4px}
+body.ux-v012 #pb12-physical-lead strong{color:#1c446d;font-size:13px}
+body.ux-v012 #pb12-physical-lead small{font-size:11px;color:#72849a}
+body.ux-v012 #pb12-propose{background:#206fda;color:#fff;border:1px solid #206fda;border-radius:9px;padding:11px 15px;font-size:12px;font-weight:750}
+body.ux-v012.view-physical #pb12-physical-options{margin-top:15px;border:1px solid #dbe5f0;border-radius:12px;padding:0;background:#fff}
+body.ux-v012 #pb12-physical-options>summary{cursor:pointer;padding:15px 17px;font-size:12px;font-weight:750;color:#38597b}
+body.ux-v012 #pb12-options-mount{padding:0 15px 18px}
+body.ux-v012 #pb12-options-mount #actionBar{margin:0 0 14px}
+body.ux-v012 #pb12-options-mount #enclosureChoices{margin-top:12px}
+body.ux-v012.view-physical #editorArea>.work-card{margin-top:0}
+body.ux-v012.view-physical .physical-shortcut-row [data-view="unifilar"]{display:none}
+
+/* R02: materiales por 2 recorridos claros y cruce documental secundario. */
+body.ux-v012 .pb12-material-tabs{display:flex;align-items:stretch;gap:8px;margin-bottom:15px;flex-wrap:wrap}
+body.ux-v012 .pb12-material-tabs button{appearance:none;border:1px solid #d9e4ee;border-radius:9px;background:#fff;color:#506881;padding:13px 18px;font-size:12px;font-weight:770}
+body.ux-v012 .pb12-material-tabs button.active{background:#e8f2ff;color:#1c62b9;border-color:#7faeec}
+body.ux-v012 .quick-budget>.card-header{border-bottom:1px solid #e5ebf2}
+body.ux-v012 .quote-spec-entry{padding:18px;border-color:#d3e3f2;background:#fafcff}
+body.ux-v012 .pb12-match-expanded>td{background:#f8fbff;padding:16px}
+body.ux-v012 .pb12-spec-compare{display:grid;gap:11px}
+body.ux-v012 .pb12-spec-compare>strong{font-size:13px;color:#25496e}
+body.ux-v012 .pb12-spec-candidate{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:11px 12px;background:#fff;border:1px solid #dce7f3;border-radius:9px}
+body.ux-v012 .pb12-spec-candidate>span{display:grid;gap:5px;font-size:12px;min-width:0}
+body.ux-v012 .pb12-spec-candidate small{color:#667d94;font-size:11px}
+body.ux-v012 .pb12-spec-candidate a{font-size:11px}
+body.ux-v012 .pb12-unifilar-cross>.card-body{padding:18px}
+body.ux-v012 .pb12-device-line{display:flex;align-items:center;justify-content:space-between;gap:16px;border:1px solid #e3eaf3;border-radius:10px;padding:15px;margin-bottom:8px}
+body.ux-v012 .pb12-device-line>div{min-width:0;display:grid;gap:5px}
+body.ux-v012 .pb12-device-line strong{font-size:13px;color:#203d5f}
+body.ux-v012 .pb12-device-line small{font-size:11px;color:#708399}
+body.ux-v012 .pb12-device-compare{border:1px solid #d9e7f3;background:#f8fbff;padding:15px;border-radius:10px;margin:12px 0 17px}
+body.ux-v012 .pb12-device-compare h3{font-size:13px;margin:0 0 12px}
+body.ux-v012 .pb12-bom-details{margin-top:22px;border-top:1px solid #e3e9f0;padding-top:16px}
+body.ux-v012 .pb12-bom-details>summary{font-size:12px;font-weight:730;color:#556e89;cursor:pointer;padding:7px 0}
+body.ux-v012 .pb12-bom-details>.quote-from-unifilar{margin-top:12px}
+@media(max-width:650px){body.ux-v012.view-physical #pb12-physical-lead{align-items:stretch;flex-direction:column}body.ux-v012 .pb12-device-line{flex-direction:column;align-items:stretch}body.ux-v012 .pb12-spec-candidate{flex-direction:column;align-items:stretch}}
+
+
+/* R03 · Fabricante visible en Materiales + tabla económica con trazabilidad. */
+body.ux-v012.view-budget .pb12-brand-choice{display:flex}
+body.ux-v012 .pb12-brand-choice{display:flex;justify-content:space-between;align-items:center;gap:20px;padding:16px 20px;margin:0 0 13px;background:#f7fbff;border:1px solid #b7d4f5;border-radius:12px}
+body.ux-v012 .pb12-brand-choice>div{display:grid;gap:5px}
+body.ux-v012 .pb12-brand-choice strong{font-size:14px;color:#194778}
+body.ux-v012 .pb12-brand-choice small{font-size:11px;line-height:1.5;color:#6b8098}
+body.ux-v012 .pb12-brand-choice label{display:grid;gap:6px;min-width:240px;font-weight:750;color:#344f70;font-size:11px}
+body.ux-v012 .pb12-brand-choice select{background:#fff;border:1px solid #8ab5e8;border-radius:8px;padding:11px 13px;font-size:13px;color:#1b3d66;font-weight:750;min-height:42px}
+body.ux-v012 .pb12-material-tabs button{flex:0 1 auto}
+body.ux-v012 .pb12-material-review .card-body{padding:16px 19px 21px}
+body.ux-v012 .pb12-economic-status{display:flex;align-items:stretch;gap:12px;margin-bottom:13px}
+body.ux-v012 .pb12-economic-status>div{display:grid;gap:6px;padding:14px 16px;background:#f6f9fe;border:1px solid #dfe9f3;border-radius:10px;flex:1}
+body.ux-v012 .pb12-economic-status>div strong{font-size:14px;color:#1b4b80}
+body.ux-v012 .pb12-economic-status>div small{font-size:11px;color:#627995;line-height:1.4}
+body.ux-v012 .pb12-economic-status>div:nth-child(2) strong{font-size:20px}
+body.ux-v012 .pb12-incomplete{border:1px solid #ecdcb3;background:#fffaf0;color:#88611b;padding:12px 14px;border-radius:9px;margin:0 0 15px;font-size:12px;line-height:1.6}
+body.ux-v012 .pb12-completion{border:1px solid #dbe6ef;background:#f4f8fc;color:#375d7d;padding:12px 14px;border-radius:9px;margin:0 0 15px;font-size:12px}
+body.ux-v012 .pb12-review-table{min-width:920px;border-collapse:collapse;width:100%;font-size:11px}
+body.ux-v012 .pb12-review-table th{white-space:nowrap;color:#55708e;background:#f3f7fc;padding:12px 10px}
+body.ux-v012 .pb12-review-table td{padding:12px 10px;vertical-align:top;border-bottom:1px solid #e8edf3;color:#2c445e}
+body.ux-v012 .pb12-review-table td strong{font-size:11px}
+body.ux-v012 .pb12-review-table td small{display:block;margin-top:4px;color:#70839a;line-height:1.5}
+body.ux-v012 .pb12-review-table td a{font-size:10px}
+body.ux-v012 .pb12-review-table .pb12-qty{font-weight:750;white-space:nowrap}
+body.ux-v012 .pb12-review-table .pb12-price-verified{color:#23664f;font-weight:750}
+body.ux-v012 .pb12-review-table .pb12-price-doc{color:#99641a}
+body.ux-v012 .pb12-review-table .pb12-price-missing{color:#7b8899}
+body.ux-v012 .pb12-pending{color:#6d7d8e;font-weight:600}
+@media(max-width:740px){
+ body.ux-v012 .pb12-brand-choice{align-items:stretch;flex-direction:column;padding:13px}
+ body.ux-v012 .pb12-brand-choice label{min-width:0;width:100%}
+ body.ux-v012 .pb12-economic-status{flex-direction:column}
+ body.ux-v012 .pb12-material-tabs{display:grid;grid-template-columns:1fr}
+}
+
+/* R05: las acciones de cruce via tabla son secundarias, pero visibles. */
+body.ux-v012 .pb12-review-actions{display:flex;align-items:center;flex-wrap:wrap;gap:12px;margin:0 0 16px}
+body.ux-v012 .pb12-review-actions span{font-size:11px;color:#70839a;line-height:1.5}
+body.ux-v012 .pb12-review-compare{display:inline-flex;margin-top:9px;white-space:nowrap;font-size:11px!important}
+@media(max-width:740px){body.ux-v012 .pb12-review-actions{align-items:stretch;flex-direction:column}body.ux-v012 .pb12-review-actions button{width:100%}}
