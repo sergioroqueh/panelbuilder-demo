@@ -1,0 +1,9 @@
+{
+  "sha": "9cc56ed84a798414b1976b0529cb3de0802f2406",
+  "branch": "feat/v0.11-unifilar-tecnico",
+  "deployedAt": "2026-10-29T13:19:00+01:00",
+  "publication": "visual-r05",
+  "mode": "manual-preview",
+  "automatedTests": false,
+  "localTestSuite": "tests/test_din_touch_r05.cjs"
+}

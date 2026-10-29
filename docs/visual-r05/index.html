@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex, nofollow, noarchive" />
+  <title>PanelBuilder · Unifilar → Envolvente · v0.11</title>
+  <link rel="stylesheet" href="styles.css?v=20261021-entrada-tecnica-ux2" />
+  <!-- Capa v0.12 opt-in: sin modificar v0.11 si falta ?ux=v012. -->
+  <link rel="stylesheet" href="v0.12/ux.css" />
+  <link rel="stylesheet" href="v0.12/visual-cabinet.css?v=20261029-r05" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><span class="brand-logo">ϟ</span><span>Panel<span class="brand-light">Builder</span></span></div>
+    <div class="divider-vertical"></div>
+    <div class="project-identity"><strong>PB-DEMO-001</strong><span>Cuadro de distribución · Modelo genérico</span></div>
+    <div class="top-actions"><span class="pill pill-beta" id="pagesPreviewStatus">VISUAL R05 · PREVIEW</span><a class="button small" id="pagesCommitLink" href="https://github.com/sergioroqueh/panelbuilder-dev/pull/1" target="_blank" rel="noopener noreferrer" hidden>Ver cambios ↗</a><button type="button" class="button small" id="startGuide">✧ Asistente</button><button type="button" class="button small" id="importBtn">Importar</button><button type="button" class="button small" id="exportBtn">↓ Exportar JSON</button></div>
+    <input id="fileInput" type="file" accept="application/json,.json" hidden />
+  </header>
+  <div class="app-shell">
+    <aside class="left-panel">
+      <section class="library-shortcuts" aria-label="Añadir dispositivos genéricos">
+        <div class="section-heading">AÑADIR DISPOSITIVOS</div>
+        <div id="library" class="library"></div>
+        <p class="tiny-hint">Selecciona un aparato origen antes de añadir, o usa el + de la conexión.</p>
+      </section>
+      <div class="section-rule"></div>
+      <div class="section-heading">VISTAS DE APOYO</div>
+      <nav class="nav-list" aria-label="Vistas">
+        <button class="nav-button active" data-view="unifilar"><span>⑂</span> Esquema unifilar</button>
+        <button class="nav-button" data-view="physical"><span>▦</span> Diseño físico</button>
+        <button class="nav-button" data-view="materials"><span>▤</span> Presupuesto y materiales</button>
+        <button class="nav-button" data-view="catalog"><span>⌕</span> Biblioteca comercial</button>
+        <button class="nav-button" data-view="checks"><span>⚑</span> Comprobaciones</button>
+        <div class="nav-divider" aria-hidden="true"></div>
+        <button class="nav-button nav-secondary" data-view="both"><span>▣</span> Vista combinada <small>Opcional</small></button>
+      </nav>
+      <div class="section-rule"></div>
+      <div class="section-heading">PROYECTO</div>
+      <label class="mini-label" for="alternativeSelect">Alternativa activa</label>
+      <select id="alternativeSelect" class="select small-select"></select>
+      <button id="duplicateBtn" class="button full subdued">⧉ Duplicar alternativa</button>
+      <div class="section-rule"></div>
+      <div class="section-heading">FABRICANTE DE REFERENCIA</div>
+      <label class="mini-label" for="brandSelect">Consultar referencias por fabricante</label>
+      <select id="brandSelect" class="select"></select>
+      <button type="button" class="button full" id="openBrandReview">⇄ Comparar y guardar candidatas</button><p class="tiny-hint" id="brandHint">El esquema sigue siendo genérico. Las fichas documentales no cambian el montaje ni su ocupación.</p>
+      <div class="section-rule"></div>
+      <div class="left-bottom">Prototipo experimental · Sin certificación ni cálculo eléctrico. Los datos se guardan en este navegador; utiliza Exportar JSON para conservar una copia.</div>
+    </aside>
+    <main class="workspace">
+      <div class="page-intro"><div><div class="eyebrow" id="workspaceEyebrow">MODO DE TRABAJO · UNIFILAR</div><h1 id="pageTitle">Editor de unifilar</h1><p id="pageSubtitle">Recrea tu esquema o cambia de modo si solo necesitas presupuestar materiales.</p></div><div class="intro-actions"><button class="button" id="undoBtn" title="Deshacer">↶</button><button class="button" id="redoBtn" title="Rehacer">↷</button></div></div>
+      <nav class="workspace-tabs" aria-label="Modos de trabajo" id="workspaceTabs">
+        <button class="workspace-tab active" type="button" data-workspace-view="unifilar" aria-pressed="true"><span>⑂</span><strong>Unifilar</strong><small>Recrear esquema</small></button>
+        <button class="workspace-tab" type="button" data-workspace-view="materials" aria-pressed="false"><span>▤</span><strong>Presupuestar</strong><small>Materiales + descuento</small></button>
+        <button class="workspace-tab" type="button" data-workspace-view="physical" aria-pressed="false"><span>▦</span><strong>Cuadro físico</strong><small>Envolvente y DIN</small></button>
+        <button class="workspace-tab" type="button" data-workspace-view="checks" aria-pressed="false"><span>⚑</span><strong>Revisión</strong><small>Comprobaciones</small></button>
+      </nav>
+      <section class="sequence-panel" id="workflowBanner"><div class="stage"><span class="stage-number">1</span><span>Construye el unifilar</span></div><span class="stage-arrow">→</span><div class="stage"><span class="stage-number">2</span><span>Propón la envolvente</span></div><span class="stage-arrow">→</span><div class="stage"><span class="stage-number">3</span><span>Selecciona fabricante</span></div></section>
+      <section id="responsibilityBanner" class="responsibility-banner" role="note" aria-label="Advertencia sobre responsabilidad y seguridad">
+        <strong>⚠ Diseño preliminar, no apto por sí solo para fabricar ni instalar.</strong>
+        <span>Los valores de ejemplo NO están calculados para tu instalación. El uso del proyecto y la comprobación de su idoneidad corresponden al usuario y, cuando proceda, al profesional competente.</span>
+        <details><summary>Leer limitaciones y responsabilidad</summary><p>PanelBuilder no sustituye cálculos eléctricos ni proyecto técnico, ni certifica cumplimiento del REBT y normas UNE/IEC aplicables. Comprueba tensión, corriente, cortocircuito, curvas y selectividad, diferenciales, protección contra sobretensiones, conductores, disipación, envolvente y compatibilidad de accesorios antes de comprar, fabricar, montar o poner en servicio. Las referencias y PVP publicados pueden estar incompletos o desactualizados. Si falta un dato, solicítalo; no se debe inventar. Este aviso no limita las obligaciones legales que correspondan a quien desarrolla o suministra el software.</p></details>
+      </section>
+      <section id="workflowAssistant" class="workflow-guidance" aria-label="Ruta de trabajo desde unifilar existente"></section>
+      <section class="action-bar" id="actionBar"><div class="action-description"><strong>Propuesta automática de montaje</strong><span>Anchuras provisionales por tipo/polos; formatos de 12, 18 o 24 módulos por fila.</span></div><div class="action-control"><label class="mini-label" for="reserveInput">Reserva</label><select id="reserveInput" class="select small-select"><option value="0">0 %</option><option value="10">10 %</option><option value="20">20 %</option><option value="30">30 %</option></select><button type="button" id="proposeBtn" class="button primary">⚡ Proponer envolvente y distribución</button></div></section>
+      <div class="summary-row" id="summary"></div>
+      <div id="enclosureChoices" class="enclosure-choices"></div>
+      <div id="editorArea" class="editor-grid"></div>
+      <div id="extraArea"></div>
+      <section class="notice-box" id="noticePanel"></section>
+    </main>
+    <aside class="right-panel"><div id="inspector"></div></aside>
+  </div>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <div class="modal-backdrop properties-backdrop" id="propertiesModal" aria-hidden="true">
+    <div class="modal properties-dialog" role="dialog" aria-modal="true" aria-labelledby="propertiesTitle">
+      <div class="modal-head">
+        <div><div class="eyebrow">EDITOR DEL UNIFILAR</div><h2 id="propertiesTitle">Propiedades del elemento</h2></div>
+        <button id="closeProperties" class="button tiny" type="button" aria-label="Cerrar propiedades">✕</button>
+      </div>
+      <div class="properties-content" id="propertiesMount"></div>
+    </div>
+  </div>
+  <div class="modal-backdrop" id="wizard" aria-hidden="true"><div class="modal" role="dialog" aria-modal="true" aria-labelledby="wizardTitle"><div class="modal-head"><span class="brand-logo">ϟ</span><button id="closeWizard" class="button tiny" type="button">✕</button></div><div class="eyebrow">EMPEZAMOS COMO TÚ QUIERAS</div><h2 id="wizardTitle">¿Qué tienes para comenzar?</h2><p>En esta demostración vamos a simular que tienes un esquema unifilar delante. También puedes empezar con el proyecto vacío.</p><div class="wizard-options"><button class="wizard-option" data-wizard="budget"><span class="wizard-symbol">▤</span><span><strong>Solo quiero presupuestar materiales</strong><small>Lista de referencias, envolvente, cantidades y descuentos · sin unifilar</small></span><span>→</span></button><button class="wizard-option" data-wizard="demo"><span class="wizard-symbol">⑂</span><span><strong>Tengo un unifilar en papel</strong><small>Cargar un esquema de ejemplo y editarlo manualmente</small></span><span>→</span></button><button class="wizard-option" data-wizard="large"><span class="wizard-symbol">▤</span><span><strong>Probar cuadro de 19 dispositivos</strong><small>Ejemplo de cuatro grupos diferenciales para comprobar varias filas y navegación</small></span><span>→</span></button><button class="wizard-option" data-wizard="blank"><span class="wizard-symbol">＋</span><span><strong>Proyecto desde cero</strong><small>Crear los dispositivos y conexiones manualmente</small></span><span>→</span></button><button class="wizard-option" data-wizard="continue"><span class="wizard-symbol">▦</span><span><strong>Continuar con mi proyecto</strong><small>Volver directamente al editor</small></span><span>→</span></button></div><button id="skipWizard" class="skip-link">Omitir asistente y entrar al editor →</button></div></div>
+  <div class="modal-backdrop" id="insertModal" aria-hidden="true">
+    <div class="modal insert-dialog" role="dialog" aria-modal="true" aria-labelledby="insertTitle">
+      <div class="modal-head"><span class="eyebrow">EDITAR CONEXIÓN DEL UNIFILAR</span><button class="button tiny" type="button" id="closeInsert" aria-label="Cerrar">✕</button></div>
+      <h2 id="insertTitle">Añadir aparato en esta conexión</h2>
+      <p id="insertDescription"></p>
+      <div id="insertChoices" class="insert-choices"></div>
+      <p class="dialog-warning">Las protecciones convencionales se intercalan; el SPD se crea como derivación y nunca alimenta las ramas existentes. Comprueba clase, red, Uc, In/Imax, protección de respaldo y conexión PE. Ninguna selección valida el cableado. Vuelve a calcular la distribución física.</p>
+    </div>
+  </div>
+  <div class="modal-backdrop" id="brandReview" aria-hidden="true"><div class="modal brand-review" role="dialog" aria-modal="true" aria-labelledby="brandReviewTitle"><div class="modal-head"><div><div class="eyebrow">SELECCIÓN MULTIMARCA CONDICIONADA</div><h2 id="brandReviewTitle">Preselección comercial</h2></div><button id="closeBrandReview" class="button tiny" aria-label="Cerrar" type="button">✕</button></div><p class="review-warning">El catálogo actual es una muestra parcial, no contiene todas las referencias. La anchura genérica es orientativa. Algunas referencias cuentan con ficha técnica pero aún no con anchura comercial verificada: se guardan solo como candidatas documentales y NO cambian el montaje. Las preselecciones del minicátalogo dimensional son independientes. No se garantiza equivalencia técnica completa. Comprueba normativa aplicable, Icn/Icu, tensión, bornes, coordinación, accesorios, compatibilidad térmica y montaje. Los cambios dimensionales solo se aplicarán tras tu confirmación.</p><div class="review-scroll"><table><thead><tr><th>Aparato genérico</th><th>Selector de referencia</th><th>Comparativa técnica y dimensional</th></tr></thead><tbody id="brandReviewTable"></tbody></table></div><div class="review-actions"><button type="button" class="button" id="closeBrandReviewSecondary" onclick="document.getElementById('closeBrandReview').click()">Cancelar</button><button class="button" type="button" id="autoPickBrandReview">Autoasignar solo con dimensión documentada</button><button class="button primary" type="button" id="applyBrandReview">Guardar selección condicionada</button></div></div></div><script src="engine.js"></script><script src="catalogo.js"></script><script src="multibrand.js"></script>
+  <script src="schematic-symbols.js"></script><script src="pricing.js"></script><script src="circuits.js"></script><script src="busbars.js"></script><script src="physical-aux.js"></script><script src="enclosure-geometry.js"></script><script src="physical-construction.js"></script><script src="schneider-ic60n.js"></script><script src="commercial-catalog.js"></script><script src="accessory-links.js"></script><script src="commercial-ui.js"></script><script src="enclosure-candidates.js"></script><script src="specialized-candidates.js"></script><script src="apparatus-candidates.js"></script><script src="commercial-placement.js"></script><script src="din-reflow.js"></script><script src="din-compact.js"></script><script src="din-insert.js"></script><script src="din-touch.js"></script>
+  <script src="din-motion-feedback.js"></script><script src="mounting-clearance.js"></script><script src="manufacturer-materials.js"></script>
+  <script src="manufacturer-hosts.js"></script>
+  <script src="manufacturer-electrical-r15.js"></script><script src="manufacturer-din-review.js"></script>
+  <script src="physical-accessories.js"></script><script src="din-assemblies.js"></script><script src="workflow-guidance.js"></script><script src="material-csv.js"></script><script src="tariff-local.js"></script><script src="quick-budget.js"></script><script src="technical-evidence-r30.js"></script><script src="technical-dossiers-r31.js"></script><script src="pole-topology-r32.js"></script><script src="switching-evidence-r33.js"></script><script src="evidence-review-r34.js"></script><script src="budget-spec.js"></script><script src="v0.12/material-review.js"></script><script src="app.js"></script><script src="site-version.js"></script><script src="v0.12/ux.js"></script>
+</body>
+</html>
