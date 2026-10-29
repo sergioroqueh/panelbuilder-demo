@@ -1,0 +1,29 @@
+/* Identificador del despliegue web. Nunca modifica el proyecto ni lee sus datos. */
+(() => {
+  'use strict';
+  if (!/^https?:$/.test(window.location.protocol)) return;
+  const label = document.getElementById('pagesPreviewStatus');
+  const link = document.getElementById('pagesCommitLink');
+  if (!label || !link) return;
+  // La identificación SHA existe solamente en despliegues publicados.
+  // El servidor de desarrollo local sirve app/v0.11 y no requiere build-info.json.
+  if (['localhost','127.0.0.1','[::1]'].includes(window.location.hostname.toLowerCase())) {
+    label.textContent = 'PanelBuilder v0.11 · Local';
+    return;
+  }
+  fetch('./build-info.json', {cache:'no-store'})
+    .then(response => response.ok ? response.json() : null)
+    .then(info => {
+      if (!info || typeof info.sha !== 'string' || !/^[a-f0-9]{40}$/i.test(info.sha)) return;
+      label.textContent = 'Web v0.11 · ' + info.sha.slice(0,7);
+      if (typeof info.deployedAt === 'string') {
+        const date = new Date(info.deployedAt);
+        if (!Number.isNaN(date.getTime())) {
+          label.title = 'Despliegue: ' + date.toLocaleString('es-ES');
+        }
+      }
+      link.href = info.publication === 'panelbuilder-demo' ? 'https://github.com/sergioroqueh/panelbuilder-demo/commits/main' : 'https://github.com/sergioroqueh/panelbuilder-dev/commit/' + info.sha;
+      link.hidden = false;
+    })
+    .catch(() => { /* Sin metadatos: editor funcional sin cambio de estado. */ });
+})();

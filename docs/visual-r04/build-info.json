@@ -1,0 +1,9 @@
+{
+  "sha": "96821d90cbeb6f1ae4ae66875d28dbbc650007dc",
+  "branch": "feat/v0.11-unifilar-tecnico",
+  "deployedAt": "2026-10-29T12:11:42.785Z",
+  "publication": "visual-r04",
+  "mode": "manual-preview",
+  "automatedTests": false,
+  "localTestSuite": "tests/test_din_compact_r04.cjs"
+}
