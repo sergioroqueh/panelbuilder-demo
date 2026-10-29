@@ -1,0 +1,9 @@
+{
+  "sha": "6db0ae9f73c46cb90de76b13bf7b8343bedda0d2",
+  "branch": "feat/v0.11-unifilar-tecnico",
+  "publication": "visual-r07",
+  "mode": "manual-preview",
+  "automatedTests": false,
+  "localTestSuite": "tests/test_physical_selection_r07.cjs",
+  "date": "2026-10-29"
+}
