@@ -1,0 +1,9 @@
+{
+  "sha": "7866297ca91125ab8f800d2fb4a69d5530cc6e41",
+  "branch": "feat/v0.11-unifilar-tecnico",
+  "publication": "visual-r08",
+  "mode": "manual-preview",
+  "automatedTests": false,
+  "localTestSuite": "tests/test_physical_locator_r08.cjs",
+  "date": "2026-10-29"
+}
